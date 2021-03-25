@@ -11,7 +11,10 @@ set -e
 #
 # Data preprocessing configuration
 #
-N_MONO=5000000  # number of monolingual sentences for each language
+# N_MONO=5000000  # number of monolingual sentences for each language
+
+N_MONO=60000  # number of monolingual sentences for each language
+# this really should be used, just use existing codes file
 CODES=60000     # number of BPE codes
 N_THREADS=16    # number of threads in data preprocessing
 
@@ -60,9 +63,12 @@ if [ "$RELOAD_CODES" == "" -a "$RELOAD_VOCAB" != "" -o "$RELOAD_CODES" != "" -a 
 #
 
 # main paths
+# MAIN_PATH=$PWD
 MAIN_PATH=$PWD
-TOOLS_PATH=$PWD/tools
-DATA_PATH=$PWD/data
+# TOOLS_PATH=$PWD/tools
+TOOLS_PATH=${MAIN_PATH}/tools
+DATA_PATH=${NMT_DATA_DIR}
+# DATA_PATH=$PWD/data
 MONO_PATH=$DATA_PATH/mono
 PARA_PATH=$DATA_PATH/para
 PROC_PATH=$DATA_PATH/processed/$SRC-$TGT
@@ -141,85 +147,89 @@ if [ "$SRC" == "en" -a "$TGT" == "ro" ]; then
 fi
 
 # install tools
-./install-tools.sh
+# ./install-tools.sh
+${MAIN_PATH}/install-tools.sh
 
+# ###################################################################################################
+# #
+# # Download monolingual data
+# #
 
-#
-# Download monolingual data
-#
+# cd $MONO_PATH
+
+# if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
+#   echo "Downloading German monolingual data ..."
+#   mkdir -p $MONO_PATH/de
+#   cd $MONO_PATH/de
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.de.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.de.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.de.shuffled.v2.gz
+#   # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
+#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
+#   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
+# fi
+
+# if [ "$SRC" == "en" -o "$TGT" == "en" ]; then
+#   echo "Downloading English monolingual data ..."
+#   mkdir -p $MONO_PATH/en
+#   cd $MONO_PATH/en
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.en.shuffled.gz
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.en.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.en.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.en.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.en.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.en.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.en.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.en.shuffled.v2.gz
+#   # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.en.shuffled.gz
+#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.en.shuffled.gz
+#   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.en.shuffled.deduped.gz
+# fi
+
+# if [ "$SRC" == "fr" -o "$TGT" == "fr" ]; then
+#   echo "Downloading French monolingual data ..."
+#   mkdir -p $MONO_PATH/fr
+#   cd $MONO_PATH/fr
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.fr.shuffled.gz
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.fr.shuffled.gz
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.fr.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.fr.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.fr.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.fr.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.fr.shuffled.gz
+#   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.fr.shuffled.v2.gz
+#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2015.fr.shuffled.gz
+#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.fr.shuffled.gz
+#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2017.fr.shuffled.gz
+# fi
+
+# if [ "$SRC" == "ro" -o "$TGT" == "ro" ]; then
+#   echo "Downloading Romanian monolingual data ..."
+#   mkdir -p $MONO_PATH/ro
+#   cd $MONO_PATH/ro
+#   wget -c http://data.statmt.org/wmt16/translation-task/news.2015.ro.shuffled.gz
+# fi
 
 cd $MONO_PATH
 
-if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
-  echo "Downloading German monolingual data ..."
-  mkdir -p $MONO_PATH/de
-  cd $MONO_PATH/de
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.de.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.de.shuffled.gz
-  # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.de.shuffled.v2.gz
-  # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
-  # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
-fi
+# # decompress monolingual data
+# for FILENAME in $SRC/news*gz $TGT/news*gz; do
+#   OUTPUT="${FILENAME::-3}"
+#   if [ ! -f "$OUTPUT" ]; then
+#     echo "Decompressing $FILENAME..."
+#     # gunzip $FILENAME
+#     gunzip $FILENAME
+#   else
+#     echo "$OUTPUT already decompressed."
+#   fi
+# done
+# ###################################################################################################
 
-if [ "$SRC" == "en" -o "$TGT" == "en" ]; then
-  echo "Downloading English monolingual data ..."
-  mkdir -p $MONO_PATH/en
-  cd $MONO_PATH/en
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.en.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.en.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.en.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.en.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.en.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.en.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.en.shuffled.gz
-  # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.en.shuffled.v2.gz
-  # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.en.shuffled.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.en.shuffled.gz
-  # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.en.shuffled.deduped.gz
-fi
-
-if [ "$SRC" == "fr" -o "$TGT" == "fr" ]; then
-  echo "Downloading French monolingual data ..."
-  mkdir -p $MONO_PATH/fr
-  cd $MONO_PATH/fr
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.fr.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.fr.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.fr.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.fr.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.fr.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.fr.shuffled.gz
-  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.fr.shuffled.gz
-  # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.fr.shuffled.v2.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2015.fr.shuffled.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.fr.shuffled.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2017.fr.shuffled.gz
-fi
-
-if [ "$SRC" == "ro" -o "$TGT" == "ro" ]; then
-  echo "Downloading Romanian monolingual data ..."
-  mkdir -p $MONO_PATH/ro
-  cd $MONO_PATH/ro
-  wget -c http://data.statmt.org/wmt16/translation-task/news.2015.ro.shuffled.gz
-fi
-
-cd $MONO_PATH
-
-# decompress monolingual data
-for FILENAME in $SRC/news*gz $TGT/news*gz; do
-  OUTPUT="${FILENAME::-3}"
-  if [ ! -f "$OUTPUT" ]; then
-    echo "Decompressing $FILENAME..."
-    gunzip -k $FILENAME
-  else
-    echo "$OUTPUT already decompressed."
-  fi
-done
 
 # concatenate monolingual data files
 if ! [[ -f "$SRC_RAW" ]]; then
@@ -264,11 +274,18 @@ echo "$TGT monolingual data tokenized in: $TGT_TOK"
 
 # reload BPE codes
 cd $MAIN_PATH
+echo "looking for BPE codes in"
+echo ${RELOAD_CODES}
+
+# RELOAD_CODES=../codes_ende
+
 if [ ! -f "$BPE_CODES" ] && [ -f "$RELOAD_CODES" ]; then
   echo "Reloading BPE codes from $RELOAD_CODES ..."
   cp $RELOAD_CODES $BPE_CODES
 fi
 
+# NOTE: this is what we DON\'T want happening, it\'s not finding the BPE codes
+# we want to copy those
 # learn BPE codes
 if [ ! -f "$BPE_CODES" ]; then
   echo "Learning BPE codes..."
@@ -296,6 +313,8 @@ if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" ]]; then
 fi
 echo "$SRC vocab in: $SRC_VOCAB"
 echo "$TGT vocab in: $TGT_VOCAB"
+
+# RELOAD_VOCAB=../vocab_ende
 
 # reload full vocabulary
 cd $MAIN_PATH

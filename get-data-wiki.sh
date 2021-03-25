@@ -15,7 +15,7 @@ lg=$1  # input language
 
 # data path
 MAIN_PATH=$PWD
-WIKI_PATH=$PWD/data/wiki
+WIKI_PATH=${NMT_EXP_DIR}/data/wiki
 
 # tools paths
 TOOLS_PATH=$PWD/tools
@@ -42,7 +42,7 @@ echo "Downloaded $WIKI_DUMP_NAME in $WIKI_PATH/bz2/$WIKI_DUMP_NAME"
 cd $MAIN_PATH
 echo "*** Cleaning and tokenizing $lg Wikipedia dump ... ***"
 if [ ! -f $WIKI_PATH/txt/$lg.all ]; then
-  python $TOOLS_PATH/wikiextractor/WikiExtractor.py $WIKI_PATH/bz2/$WIKI_DUMP_NAME --processes 8 -q -o - \
+  python $TOOLS_PATH/wikiextractor/wikiextractor/WikiExtractor.py $WIKI_PATH/bz2/$WIKI_DUMP_NAME --processes 8 -q -o - \
   | sed "/^\s*\$/d" \
   | grep -v "^<doc id=" \
   | grep -v "</doc>\$" \

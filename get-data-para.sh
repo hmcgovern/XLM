@@ -14,8 +14,8 @@ set -e
 pair=$1  # input language pair
 
 # data paths
-MAIN_PATH=$PWD
-PARA_PATH=$PWD/data/para
+MAIN_PATH=${NMT_EXP_DIR}
+PARA_PATH=${NMT_EXP_DIR}/data/tlm
 
 # tools paths
 TOOLS_PATH=$PWD/tools
