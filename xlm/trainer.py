@@ -60,7 +60,9 @@ class Trainer(object):
         if params.multi_gpu and params.amp == -1:
             logger.info("Using nn.parallel.DistributedDataParallel ...")
             for name in self.MODEL_NAMES:
-                setattr(self, name, nn.parallel.DistributedDataParallel(getattr(self, name), device_ids=[params.local_rank], output_device=params.local_rank, broadcast_buffers=True))
+                setattr(self, name, nn.parallel.DistributedDataParallel(getattr(self, name), device_ids=[params.local_rank], output_device=params.local_rank, broadcast_buffers=True,
+                find_unused_parameters=True))
+                # setattr(self, name, nn.parallel.DistributedDataParallel(getattr(self, name), device_ids=[params.local_rank], output_device=params.local_rank, broadcast_buffers=True))
 
         # set optimizers
         self.set_optimizers()
@@ -693,6 +695,7 @@ class Trainer(object):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += lengths.size(0)
         self.stats['processed_w'] += pred_mask.sum().item()
+        # return loss
 
     def mlm_step(self, lang1, lang2, lambda_coeff):
         """
@@ -728,6 +731,7 @@ class Trainer(object):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += lengths.size(0)
         self.stats['processed_w'] += pred_mask.sum().item()
+        # return loss
 
     def pc_step(self, lang1, lang2, lambda_coeff):
         """
@@ -783,7 +787,7 @@ class Trainer(object):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += bs
         self.stats['processed_w'] += lengths.sum().item()
-
+        # return loss
 
 class SingleTrainer(Trainer):
 
@@ -867,6 +871,85 @@ class EncDecTrainer(Trainer):
         self.stats['processed_s'] += len2.size(0)
         self.stats['processed_w'] += (len2 - 1).sum().item()
 
+#######################################################################
+    def rat_step(self, lang1, lang2, lang3, lambda_coeff):
+        """
+        Reference Agreement Step
+        Given lang1 and lang2, which are connected with parallel data, 
+        Simultaneously generates a translation in the target language by taking votes
+        then trains lang1-->lang3 and lang2-->lang3 with the generated translation as gold label target
+        """
+        # area for assert statements
+        assert lambda_coeff >= 0
+        if lambda_coeff == 0:
+            return
+        # ensuring that lang1 and lang2 have parallel data btw them
+        _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
+        assert (_lang1, _lang2) in self.data['para'] 
+        # maybe assert _lang1, _lang2 in self.params.para_dataset.keys() if this doesn't work?
+    
+        params = self.params
+         
+        _encoder = self.encoder.module if params.multi_gpu else self.encoder
+        _decoder = self.decoder.module if params.multi_gpu else self.decoder
+
+        lang1_id = params.lang2id[lang1]
+        lang2_id = params.lang2id[lang2]
+        lang3_id = params.lang2id[lang3]
+
+        # generate batch
+        (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2)
+        langs1 = x1.clone().fill_(lang1_id)
+        langs2 = x2.clone().fill_(lang2_id)
+
+        # # target words to predict
+        # alen = torch.arange(len2.max(), dtype=torch.long, device=len2.device)
+        # pred_mask = alen[:, None] < len2[None] - 1  # do not predict anything given the last target word
+        # y = x2[1:].masked_select(pred_mask[:-1])
+        # assert len(y) == (len2 - 1).sum().item()
+
+        # cuda
+        x1, len1, langs1, x2, len2, langs2, y = to_cuda(x1, len1, langs1, \
+                                                        x2, len2, langs2, y)
+
+        with torch.no_grad():
+            self.encoder.eval()
+            self.decoder.eval()
+            
+            # encode source and reference sentences (parallel to each other)
+            enc1 = self._encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1 = enc1.transpose(0, 1)
+
+            enc2 = self._encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+            enc2 = enc2.transpose(0,1)
+
+            # translate them to target using votes from the two encodings
+            # NOTE: leaving len param to default (200) bc we don't want it tied to either input†
+            x3, len3 = self._decoder.generate(enc1, lang2_id, max_len=int(1.3 * len1.max().item() + 5))
+            langs3 = x3.clone().fill_(lang3_id)
+            
+            # free CUDA memory
+            del enc1
+            del enc2
+            
+            self._encoder.train()
+            self._decoder.train()
+        
+        # loss is the sum of smoothed cross-entropy loss of S-->T and R-->T
+        _, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
+        self.stats[('AE-%s' % lang1) if lang1 == lang2 else ('MT-%s-%s' % (lang1, lang2))].append(loss.item())
+        loss = lambda_coeff * loss
+
+        # optimize
+        self.optimize(loss)
+
+        # number of processed sentences / words
+        self.n_sentences += params.batch_size
+        self.stats['processed_s'] += len2.size(0)
+        self.stats['processed_w'] += (len2 - 1).sum().item()
+
+#######################################################################     
+
     def bt_step(self, lang1, lang2, lang3, lambda_coeff):
         """
         Back-translation step for machine translation.
@@ -909,7 +992,7 @@ class EncDecTrainer(Trainer):
             self.encoder.train()
             self.decoder.train()
 
-        # encode generate sentence
+        # encode generated sentence
         enc2 = self.encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
         enc2 = enc2.transpose(0, 1)
 
@@ -933,3 +1016,4 @@ class EncDecTrainer(Trainer):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += len1.size(0)
         self.stats['processed_w'] += (len1 - 1).sum().item()
+        # return loss# TODO: return loss so you can log it in train.py, same for all these steps

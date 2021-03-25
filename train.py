@@ -5,6 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 #
 
+from comet_ml import Experiment
+
 import json
 import random
 import argparse
@@ -161,6 +163,13 @@ def get_parser():
                         help="MT coefficient")
     parser.add_argument("--lambda_bt", type=str, default="1",
                         help="BT coefficient")
+    # NOTE: my own!!
+    parser.add_argument("--lambda_rat", type=str, default="1",
+                        help="RAT coefficient")
+    parser.add_argument("--lambda_xbt", type=str, default="1",
+                        help="XBT coefficient")
+    parser.add_argument("--lambda_rabt", type=str, default="1",
+                        help="RABT coefficient")
 
     # training steps
     parser.add_argument("--clm_steps", type=str, default="",
@@ -175,6 +184,14 @@ def get_parser():
                         help="Back-translation steps")
     parser.add_argument("--pc_steps", type=str, default="",
                         help="Parallel classification steps")
+    # NOTE: mine!!
+    # also note, these might not be necessary with the prebuilt functionality
+    parser.add_argument("--rat_steps", type=str, default="",
+                        help="Reference agreement translation steps")
+    parser.add_argument("--rabt_steps", type=str, default="",
+                        help="Reference agree back-translation steps")
+    parser.add_argument("--xbt_steps", type=str, default="",
+                        help="Cross back-translation steps")
 
     # reload pretrained embeddings / pretrained model / checkpoint
     parser.add_argument("--reload_emb", type=str, default="",
@@ -216,15 +233,19 @@ def get_parser():
 
 
 def main(params):
+    
+    # start a comet project
+    experiment = Experiment(workspace="hopemcgovern", log_code=True)
+    experiment.log_parameters(params)
 
     # initialize the multi-GPU / multi-node training
-    init_distributed_mode(params)
+    # init_distributed_mode(params)
 
     # initialize the experiment
     logger = initialize_exp(params)
 
     # initialize SLURM signal handler for time limit / pre-emption
-    init_signal_handler()
+    # init_signal_handler()
 
     # load data
     data = load_data(params)
@@ -249,61 +270,65 @@ def main(params):
         for k, v in scores.items():
             logger.info("%s -> %.6f" % (k, v))
         logger.info("__log__:%s" % json.dumps(scores))
+        experiment.log_metrics(scores)
         exit()
 
     # set sampling probabilities for training
     set_sampling_probs(data, params)
+    
+    with experiment.train(): 
+        # language model training
+        for _ in range(params.max_epoch):
 
-    # language model training
-    for _ in range(params.max_epoch):
+            logger.info("============ Starting epoch %i ... ============" % trainer.epoch)
 
-        logger.info("============ Starting epoch %i ... ============" % trainer.epoch)
+            trainer.n_sentences = 0
 
-        trainer.n_sentences = 0
+            while trainer.n_sentences < trainer.epoch_size:
 
-        while trainer.n_sentences < trainer.epoch_size:
+                # CLM steps
+                for lang1, lang2 in shuf_order(params.clm_steps, params):
+                    trainer.clm_step(lang1, lang2, params.lambda_clm)
 
-            # CLM steps
-            for lang1, lang2 in shuf_order(params.clm_steps, params):
-                trainer.clm_step(lang1, lang2, params.lambda_clm)
+                # MLM steps (also includes TLM if lang2 is not None)
+                for lang1, lang2 in shuf_order(params.mlm_steps, params):
+                    trainer.mlm_step(lang1, lang2, params.lambda_mlm)
 
-            # MLM steps (also includes TLM if lang2 is not None)
-            for lang1, lang2 in shuf_order(params.mlm_steps, params):
-                trainer.mlm_step(lang1, lang2, params.lambda_mlm)
+                # parallel classification steps
+                for lang1, lang2 in shuf_order(params.pc_steps, params):
+                    trainer.pc_step(lang1, lang2, params.lambda_pc)
 
-            # parallel classification steps
-            for lang1, lang2 in shuf_order(params.pc_steps, params):
-                trainer.pc_step(lang1, lang2, params.lambda_pc)
+                # denoising auto-encoder steps
+                for lang in shuf_order(params.ae_steps):
+                    trainer.mt_step(lang, lang, params.lambda_ae)
 
-            # denoising auto-encoder steps
-            for lang in shuf_order(params.ae_steps):
-                trainer.mt_step(lang, lang, params.lambda_ae)
+                # machine translation steps
+                for lang1, lang2 in shuf_order(params.mt_steps, params):
+                    trainer.mt_step(lang1, lang2, params.lambda_mt)
 
-            # machine translation steps
-            for lang1, lang2 in shuf_order(params.mt_steps, params):
-                trainer.mt_step(lang1, lang2, params.lambda_mt)
+                # back-translation steps
+                for lang1, lang2, lang3 in shuf_order(params.bt_steps):
+                    trainer.bt_step(lang1, lang2, lang3, params.lambda_bt)
+                
+                trainer.iter()
 
-            # back-translation steps
-            for lang1, lang2, lang3 in shuf_order(params.bt_steps):
-                trainer.bt_step(lang1, lang2, lang3, params.lambda_bt)
+            logger.info("============ End of epoch %i ============" % trainer.epoch)
 
-            trainer.iter()
+            # evaluate perplexity
+            scores = evaluator.run_all_evals(trainer)
 
-        logger.info("============ End of epoch %i ============" % trainer.epoch)
+            # print / JSON log
+            for k, v in scores.items():
+                logger.info("%s -> %.6f" % (k, v))
+            if params.is_master:
+                logger.info("__log__:%s" % json.dumps(scores))
 
-        # evaluate perplexity
-        scores = evaluator.run_all_evals(trainer)
+            # end of epoch
+            trainer.save_best_model(scores)
+            trainer.save_periodic()
+            trainer.end_epoch(scores)
 
-        # print / JSON log
-        for k, v in scores.items():
-            logger.info("%s -> %.6f" % (k, v))
-        if params.is_master:
-            logger.info("__log__:%s" % json.dumps(scores))
-
-        # end of epoch
-        trainer.save_best_model(scores)
-        trainer.save_periodic()
-        trainer.end_epoch(scores)
+            experiment.log_metrics(scores)
 
 
 if __name__ == '__main__':
@@ -312,6 +337,8 @@ if __name__ == '__main__':
     parser = get_parser()
     params = parser.parse_args()
 
+    # print(params.para_dataset.keys())
+    # exit()
     # debug mode
     if params.debug:
         params.exp_name = 'debug'
