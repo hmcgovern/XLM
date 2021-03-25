@@ -876,8 +876,8 @@ class EncDecTrainer(Trainer):
         """
         Reference Agreement Step
         Given lang1 and lang2, which are connected with parallel data, 
-        Simultaneously generates a translation in the target language by taking votes
-        then trains lang1-->lang3 and lang2-->lang3 with the generated translation as gold label target
+        simultaneously generates a translation in the target language by taking votes on the next-word prediction
+        then trains lang1-->lang3 and lang2-->lang3 with the generated translation as gold label target.
         """
         # area for assert statements
         assert lambda_coeff >= 0
@@ -902,15 +902,9 @@ class EncDecTrainer(Trainer):
         langs1 = x1.clone().fill_(lang1_id)
         langs2 = x2.clone().fill_(lang2_id)
 
-        # # target words to predict
-        # alen = torch.arange(len2.max(), dtype=torch.long, device=len2.device)
-        # pred_mask = alen[:, None] < len2[None] - 1  # do not predict anything given the last target word
-        # y = x2[1:].masked_select(pred_mask[:-1])
-        # assert len(y) == (len2 - 1).sum().item()
-
         # cuda
-        x1, len1, langs1, x2, len2, langs2, y = to_cuda(x1, len1, langs1, \
-                                                        x2, len2, langs2, y)
+        x1, len1, langs1, x2, len2, langs2 = to_cuda(x1, len1, langs1, \
+                                                        x2, len2, langs2)
 
         with torch.no_grad():
             self.encoder.eval()
@@ -924,8 +918,7 @@ class EncDecTrainer(Trainer):
             enc2 = enc2.transpose(0,1)
 
             # translate them to target using votes from the two encodings
-            # NOTE: leaving len param to default (200) bc we don't want it tied to either input†
-            x3, len3 = self._decoder.generate(enc1, lang2_id, max_len=int(1.3 * len1.max().item() + 5))
+            x3, len3 = self._decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5))
             langs3 = x3.clone().fill_(lang3_id)
             
             # free CUDA memory
@@ -935,18 +928,42 @@ class EncDecTrainer(Trainer):
             self._encoder.train()
             self._decoder.train()
         
-        # loss is the sum of smoothed cross-entropy loss of S-->T and R-->T
-        _, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
-        self.stats[('AE-%s' % lang1) if lang1 == lang2 else ('MT-%s-%s' % (lang1, lang2))].append(loss.item())
+        # # the agreed-upon translation, length, and lang_id
+        # x3, len3, langs3= to_cuda(x3, len3, langs3)
+        
+        # encode generated agreed-upon translation
+        enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=lang3, causal=False)
+        enc3 = enc3.transpose(0,1)
+
+        
+        # words to predict
+        alen = torch.arange(len3.max(), dtype=torch.long, device=len3.device)
+        pred_mask = alen[:, None] < len3[None] - 1  # do not predict anything given the last target word
+        y3 = x3[1:].masked_select(pred_mask[:-1])
+
+        # decode from source
+        dec1 = self.decoder('fwd', x=x1, lengths=len1, langs=lang1, causal=True, src_enc=enc3, src_len=len3)
+        # decode from reference
+        dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=lang2, causal=True, src_enc=enc3, src_len=len3)
+
+        
+
+        # loss is the sum of loss of S-->T and R-->T
+        _, loss1 = self.decoder('predict', tensor=dec1, pred_mask=pred_mask, y=y3, get_scores=False)
+        _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y3, get_scores=False)
+        
+        loss = loss1.add(loss2)
+        self.stats[('RAT-%s-%s-%s' % (lang1, lang2, lang3)].append(loss.item())
         loss = lambda_coeff * loss
 
         # optimize
         self.optimize(loss)
 
         # number of processed sentences / words
+        # NOTE: not sure which len we should use here, guessing target (3rd)
         self.n_sentences += params.batch_size
-        self.stats['processed_s'] += len2.size(0)
-        self.stats['processed_w'] += (len2 - 1).sum().item()
+        self.stats['processed_s'] += len3.size(0)
+        self.stats['processed_w'] += (len3 - 1).sum().item()
 
 #######################################################################     
 

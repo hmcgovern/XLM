@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-# cd ${NMT_EXP_DIR}/models
-
-# wget https://dl.fbaipublicfiles.com/XLM/mlm_tlm_xnli15_1024.pth
-# wget https://dl.fbaipublicfiles.com/XLM/codes_xnli_15
-# wget https://dl.fbaipublicfiles.com/XLM/vocab_xnli_15
-
-
 
 # ar bg de el en es fr hi ru sw th tr ur vi zh
 for lg in ar de en es fr hi ru; do
@@ -21,3 +14,4 @@ lg_pairs="ar-en de-en en-es en-fr en-hi en-ru"
 for lg_pair in $lg_pairs; do
   ./get-data-para.sh $lg_pair
 done
+
