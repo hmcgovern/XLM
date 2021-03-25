@@ -16,19 +16,19 @@ pair=$1  # input language pair
 
 # data paths
 MAIN_PATH=$PWD
-PARA_PATH=$PWD/data/para
+PARA_PATH=${NMT_EXP_DIR}/data/para
 TOOLS_PATH=$PWD/tools
-WIKI_PATH=$PWD/data/wiki
-XNLI_PATH=$PWD/data/xnli/XNLI-1.0
-PROCESSED_PATH=$PWD/data/processed/XLM15
-CODES_PATH=$MAIN_PATH/codes_xnli_15
-VOCAB_PATH=$MAIN_PATH/vocab_xnli_15
+WIKI_PATH=${NMT_EXP_DIR}/data/wiki
+XNLI_PATH=${NMT_EXP_DIR}/data/xnli/XNLI-1.0
+PROCESSED_PATH=${NMT_EXP_DIR}/data/processed/XLM15
+CODES_PATH=${NMT_EXP_DIR}/models/codes_xnli_15
+VOCAB_PATH=${NMT_EXP_DIR}/models/vocab_xnli_15
 FASTBPE=$TOOLS_PATH/fastBPE/fast
 
 
 # Get BPE codes and vocab
-wget -c https://dl.fbaipublicfiles.com/XLM/codes_xnli_15 -P $MAIN_PATH
-wget -c https://dl.fbaipublicfiles.com/XLM/vocab_xnli_15 -P $MAIN_PATH
+# wget -c https://dl.fbaipublicfiles.com/XLM/codes_xnli_15 -P $MAIN_PATH
+# wget -c https://dl.fbaipublicfiles.com/XLM/vocab_xnli_15 -P $MAIN_PATH
 
 
 ## Prepare monolingual data

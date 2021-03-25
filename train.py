@@ -239,13 +239,13 @@ def main(params):
     experiment.log_parameters(params)
 
     # initialize the multi-GPU / multi-node training
-    # init_distributed_mode(params)
+    init_distributed_mode(params)
 
     # initialize the experiment
     logger = initialize_exp(params)
 
     # initialize SLURM signal handler for time limit / pre-emption
-    # init_signal_handler()
+    init_signal_handler()
 
     # load data
     data = load_data(params)
