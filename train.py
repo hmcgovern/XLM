@@ -235,7 +235,7 @@ def get_parser():
 def main(params):
     
     # start a comet project
-    experiment = Experiment(workspace="hopemcgovern", log_code=True)
+    experiment = Experiment(workspace="hopemcgovern", log_code=False, disabled=True)
     experiment.log_parameters(params)
 
     # initialize the multi-GPU / multi-node training
