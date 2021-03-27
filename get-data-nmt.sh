@@ -64,11 +64,9 @@ if [ "$RELOAD_CODES" == "" -a "$RELOAD_VOCAB" != "" -o "$RELOAD_CODES" != "" -a 
 
 # main paths
 # MAIN_PATH=$PWD
-MAIN_PATH=$PWD
-# TOOLS_PATH=$PWD/tools
-TOOLS_PATH=${MAIN_PATH}/tools
-DATA_PATH=${NMT_DATA_DIR}
-# DATA_PATH=$PWD/data
+MAIN_PATH=/${XLM_REPO_DIR}
+TOOLS_PATH=/${XLM_REPO_DIR}/tools
+DATA_PATH=$PWD/data
 MONO_PATH=$DATA_PATH/mono
 PARA_PATH=$DATA_PATH/para
 PROC_PATH=$DATA_PATH/processed/$SRC-$TGT
@@ -147,8 +145,8 @@ if [ "$SRC" == "en" -a "$TGT" == "ro" ]; then
 fi
 
 # install tools
-# ./install-tools.sh
-${MAIN_PATH}/install-tools.sh
+./install-tools.sh
+# ${MAIN_PATH}/install-tools.sh
 
 # ###################################################################################################
 # #

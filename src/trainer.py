@@ -951,7 +951,7 @@ class EncDecTrainer(Trainer):
         _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y3, get_scores=False)
         
         loss = loss1.add(loss2)
-        self.stats[('RAT-%s-%s-%s' % (lang1, lang2, lang3)].append(loss.item())
+        self.stats[('RAT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
         loss = lambda_coeff * loss
 
         # optimize
@@ -1049,7 +1049,7 @@ class EncDecTrainer(Trainer):
         _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask2, y=y2, get_scores=False)
         
         loss = loss1.add(loss2)
-        self.stats[('RABT-%s-%s-%s' % (lang1, lang2, lang3)].append(loss.item())
+        self.stats[('RABT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
         loss = lambda_coeff * loss
 
         # optimize
@@ -1147,7 +1147,7 @@ class EncDecTrainer(Trainer):
         _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask2, y=y2, get_scores=False)
         
         loss = loss1.add(loss2)
-        self.stats[('RABT-%s-%s-%s' % (lang1, lang2, lang3)].append(loss.item())
+        self.stats[('RABT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
         loss = lambda_coeff * loss
 
         # optimize
