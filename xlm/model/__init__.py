@@ -140,7 +140,8 @@ def build_model(params, dico):
 
     else:
         # build
-        encoder = TransformerModel(params, dico, is_encoder=True, with_output=True)  # TODO: only output when necessary - len(params.clm_steps + params.mlm_steps) > 0
+        # NOTE: modified from True to False with_output
+        encoder = TransformerModel(params, dico, is_encoder=True, with_output=False)  # TODO: only output when necessary - len(params.clm_steps + params.mlm_steps) > 0
         decoder = TransformerModel(params, dico, is_encoder=False, with_output=True)
 
         # reload pretrained word embeddings
@@ -161,7 +162,7 @@ def build_model(params, dico):
                 enc_reload = enc_reload['model' if 'model' in enc_reload else 'encoder']
                 if all([k.startswith('module.') for k in enc_reload.keys()]):
                     enc_reload = {k[len('module.'):]: v for k, v in enc_reload.items()}
-                encoder.load_state_dict(enc_reload)
+                encoder.load_state_dict(enc_reload, strict=False) #NOTE: strict arg was added by me
 
             # reload decoder
             if dec_path != '':

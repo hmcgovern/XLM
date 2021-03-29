@@ -12,7 +12,6 @@ set -e
 # Data preprocessing configuration
 #
 # N_MONO=5000000  # number of monolingual sentences for each language
-
 N_MONO=60000  # number of monolingual sentences for each language
 # this really should be used, just use existing codes file
 CODES=60000     # number of BPE codes
@@ -64,11 +63,9 @@ if [ "$RELOAD_CODES" == "" -a "$RELOAD_VOCAB" != "" -o "$RELOAD_CODES" != "" -a 
 
 # main paths
 # MAIN_PATH=$PWD
-MAIN_PATH=$PWD
-# TOOLS_PATH=$PWD/tools
-TOOLS_PATH=${MAIN_PATH}/tools
-DATA_PATH=${NMT_DATA_DIR}
-# DATA_PATH=$PWD/data
+MAIN_PATH=/${XLM_REPO_DIR}
+TOOLS_PATH=/${XLM_REPO_DIR}/tools
+DATA_PATH=$PWD/data
 MONO_PATH=$DATA_PATH/mono
 PARA_PATH=$DATA_PATH/para
 PROC_PATH=$DATA_PATH/processed/$SRC-$TGT
@@ -98,8 +95,8 @@ NORMALIZE_ROMANIAN=$WMT16_SCRIPTS/preprocess/normalise-romanian.py
 REMOVE_DIACRITICS=$WMT16_SCRIPTS/preprocess/remove-diacritics.py
 
 # raw and tokenized files
-SRC_RAW=$MONO_PATH/$SRC/all.$SRC
-TGT_RAW=$MONO_PATH/$TGT/all.$TGT
+SRC_RAW=$MONO_PATH/$SRC/all.$N_MONO.$SRC
+TGT_RAW=$MONO_PATH/$TGT/all.$N_MONO.$TGT
 SRC_TOK=$SRC_RAW.tok
 TGT_TOK=$TGT_RAW.tok
 
@@ -147,8 +144,8 @@ if [ "$SRC" == "en" -a "$TGT" == "ro" ]; then
 fi
 
 # install tools
-# ./install-tools.sh
-${MAIN_PATH}/install-tools.sh
+./install-tools.sh
+# ${MAIN_PATH}/install-tools.sh
 
 # ###################################################################################################
 # #

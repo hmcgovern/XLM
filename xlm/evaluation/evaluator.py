@@ -226,29 +226,30 @@ class Evaluator(object):
         with torch.no_grad():
 
             for data_set in ['valid', 'test']:
+                # NOTE: this should log to comet under 'valid' and 'test' namespaces
+                with trainer.exp.context_manager(data_set):
+                    # causal prediction task (evaluate perplexity and accuracy)
+                    for lang1, lang2 in params.clm_steps:
+                        self.evaluate_clm(scores, data_set, lang1, lang2)
 
-                # causal prediction task (evaluate perplexity and accuracy)
-                for lang1, lang2 in params.clm_steps:
-                    self.evaluate_clm(scores, data_set, lang1, lang2)
+                    # prediction task (evaluate perplexity and accuracy)
+                    for lang1, lang2 in params.mlm_steps:
+                        self.evaluate_mlm(scores, data_set, lang1, lang2)
 
-                # prediction task (evaluate perplexity and accuracy)
-                for lang1, lang2 in params.mlm_steps:
-                    self.evaluate_mlm(scores, data_set, lang1, lang2)
+                    # machine translation task (evaluate perplexity and accuracy)
+                    for lang1, lang2 in set(params.mt_steps + [(l2, l3) for _, l2, l3 in params.bt_steps]):
+                        eval_bleu = params.eval_bleu and params.is_master
+                        self.evaluate_mt(scores, data_set, lang1, lang2, eval_bleu)
 
-                # machine translation task (evaluate perplexity and accuracy)
-                for lang1, lang2 in set(params.mt_steps + [(l2, l3) for _, l2, l3 in params.bt_steps]):
-                    eval_bleu = params.eval_bleu and params.is_master
-                    self.evaluate_mt(scores, data_set, lang1, lang2, eval_bleu)
-
-                # report average metrics per language
-                _clm_mono = [l1 for (l1, l2) in params.clm_steps if l2 is None]
-                if len(_clm_mono) > 0:
-                    scores['%s_clm_ppl' % data_set] = np.mean([scores['%s_%s_clm_ppl' % (data_set, lang)] for lang in _clm_mono])
-                    scores['%s_clm_acc' % data_set] = np.mean([scores['%s_%s_clm_acc' % (data_set, lang)] for lang in _clm_mono])
-                _mlm_mono = [l1 for (l1, l2) in params.mlm_steps if l2 is None]
-                if len(_mlm_mono) > 0:
-                    scores['%s_mlm_ppl' % data_set] = np.mean([scores['%s_%s_mlm_ppl' % (data_set, lang)] for lang in _mlm_mono])
-                    scores['%s_mlm_acc' % data_set] = np.mean([scores['%s_%s_mlm_acc' % (data_set, lang)] for lang in _mlm_mono])
+                    # report average metrics per language
+                    _clm_mono = [l1 for (l1, l2) in params.clm_steps if l2 is None]
+                    if len(_clm_mono) > 0:
+                        scores['%s_clm_ppl' % data_set] = np.mean([scores['%s_%s_clm_ppl' % (data_set, lang)] for lang in _clm_mono])
+                        scores['%s_clm_acc' % data_set] = np.mean([scores['%s_%s_clm_acc' % (data_set, lang)] for lang in _clm_mono])
+                    _mlm_mono = [l1 for (l1, l2) in params.mlm_steps if l2 is None]
+                    if len(_mlm_mono) > 0:
+                        scores['%s_mlm_ppl' % data_set] = np.mean([scores['%s_%s_mlm_ppl' % (data_set, lang)] for lang in _mlm_mono])
+                        scores['%s_mlm_acc' % data_set] = np.mean([scores['%s_%s_mlm_acc' % (data_set, lang)] for lang in _mlm_mono])
 
         return scores
 
