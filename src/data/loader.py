@@ -290,7 +290,7 @@ def check_data_params(params):
     assert all([l1 != l2 and l1 != l3 for l1, l2, l3 in params.rat_steps])
     assert len(params.rat_steps) == len(set(params.rat_steps))
     assert len(params.rat_steps) == 0 or not params.encoder_only
-    params.rat_src_langs = [l1,l2 for l1, l2, _ in params.rat_steps]
+    params.rat_src_langs = [(l1,l2) for l1, l2, _ in params.rat_steps]
 
     # check monolingual datasets
     required_mono = set([l1 for l1, l2 in (params.mlm_steps + params.clm_steps) if l2 is None] + params.ae_steps + params.bt_src_langs)

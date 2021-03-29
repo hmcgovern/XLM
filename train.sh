@@ -3,17 +3,19 @@
 export COMET_MODE=ONLINE
 export COMET_API_KEY="ZVTkXN5kScnbV6H4uBBZ97Qyv"
 export COMET_PROJECT_NAME='low-resource-mt'
+# export COMET_DISABLE_AUTO_LOGGING=1
 
 ## main parameters
 # export CUDA_VISIBLE_DEVICES=0,1
 # this is for multi GPU training:
 # 
-# python ./XLM/train.py \
-export NGPU=4; python -m torch.distributed.launch --nproc_per_node=$NGPU ./XLM/train.py \
+
+# export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
+python ./train.py \
 --exp_name unsupMT_ende \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
 --reload_model "mlm_ende_1024.pth,mlm_ende_1024.pth" \
---data_path ./XLM/de-en/ \
+--data_path ./data/processed/de-en/ \
 --lgs 'de-en' \
 --ae_steps 'de,en' \
 --bt_steps 'de-en-de,en-de-en' \
@@ -28,19 +30,28 @@ export NGPU=4; python -m torch.distributed.launch --nproc_per_node=$NGPU ./XLM/t
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 2000 \
+--tokens_per_batch 1000 \
 --batch_size 32 \
 --bptt 256 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
---epoch_size 200000 \
+--epoch_size 20000 \
 --eval_bleu true \
---stopping_criterion 'valid_en-de_mt_bleu,10' \
+--stopping_criterion 'valid_en-de_mt_bleu,3' \
 --validation_metrics 'valid_en-de_mt_bleu' \
---debug_train true \
-# --debug_slurm true \
+--debug_slurm true \
+--amp 1 \
+--accumulate_gradients 4 \
+--fp16 true 
+
+# --debug_train true 
 
 
+# --master_port 18979
 
+# when i run it interactively, local rank is 3
+# --accumulate_gradients 4 \
+# --amp 2 \
+# --epoch_size 200000   was this, I want to test how it handles btw epochs
 
 
 # note: batchsize is for back_translation
