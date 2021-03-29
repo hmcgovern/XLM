@@ -893,7 +893,7 @@ class EncDecTrainer(Trainer):
             return
         # ensuring that lang1 and lang2 have parallel data btw them
         _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
-        assert (_lang1, _lang2) in self.data['para'] 
+        assert (_lang1, _lang2) in self.params.para_dataset.keys()
         # maybe assert _lang1, _lang2 in self.params.para_dataset.keys() if this doesn't work?
     
         params = self.params
@@ -932,6 +932,16 @@ class EncDecTrainer(Trainer):
             # free CUDA memory
             del enc1
             del enc2
+
+            if self.n_iter % 100 == 0:
+                source = []
+                source.extend(convert_to_text(x1, len1, self.data['dico'], params))
+                ref = []
+                ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
+                voted = []
+                voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
+                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_iter, metadata={'category': 'rat_step'})
+
             
             self._encoder.train()
             self._decoder.train()
@@ -1240,7 +1250,7 @@ class EncDecTrainer(Trainer):
             bt2 = []
             bt2.extend(convert_to_text(x3, len3, self.data['dico'], params))
 
-            self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\n BT TO {lang2}: {bt1[0]}\n\n BT BACK TO {lang1}: {bt2[0]}', step=self.n_iter, metadata={'category': 'bt_step'})
+            self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_iter, metadata={'category': 'bt_step'})
             # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
 
         # loss
