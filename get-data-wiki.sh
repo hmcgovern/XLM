@@ -42,7 +42,8 @@ echo "Downloaded $WIKI_DUMP_NAME in $WIKI_PATH/bz2/$WIKI_DUMP_NAME"
 cd $MAIN_PATH
 echo "*** Cleaning and tokenizing $lg Wikipedia dump ... ***"
 if [ ! -f $WIKI_PATH/txt/$lg.all ]; then
-  python $TOOLS_PATH/wikiextractor/wikiextractor/WikiExtractor.py $WIKI_PATH/bz2/$WIKI_DUMP_NAME --processes 8 -q -o - \
+  # python $TOOLS_PATH/wikiextractor/WikiExtractor.py $WIKI_PATH/bz2/$WIKI_DUMP_NAME --processes 8 -q -o - \
+  python -m wikiextractor.WikiExtractor $WIKI_PATH/bz2/$WIKI_DUMP_NAME -o - \
   | sed "/^\s*\$/d" \
   | grep -v "^<doc id=" \
   | grep -v "</doc>\$" \
@@ -59,6 +60,7 @@ split_data() {
         seed="$1"; openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt </dev/zero 2>/dev/null
     };
     NLINES=`wc -l $1  | awk -F " " '{print $1}'`;
+    echo $NLINES
     NTRAIN=$((NLINES - 10000));
     NVAL=$((NTRAIN + 5000));
     shuf --random-source=<(get_seeded_random 42) $1 | head -$NTRAIN             > $2;

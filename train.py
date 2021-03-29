@@ -235,7 +235,7 @@ def get_parser():
 def main(params):
     
     # start a comet project
-    experiment = Experiment(workspace="hopemcgovern", log_code=True)#, disable=True)
+    experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
     experiment.log_parameters(params)
     experiment.add_tag('XLM')
 
