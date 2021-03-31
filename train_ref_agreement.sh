@@ -5,17 +5,17 @@ export COMET_API_KEY="ZVTkXN5kScnbV6H4uBBZ97Qyv"
 export COMET_PROJECT_NAME='low-resource-mt'
 
 
-# WE ARE TRAINING AN EN-->DE MODEL WITH ARABIC (AR) AS A REFERENCE LANGUAGE
+# WE ARE TRAINING AN EN-->DE MODEL WITH French (Fr) AS A REFERENCE LANGUAGE
 python ./train.py \
---exp_name unsupMT_ar_de_en \
+--exp_name unsupMT_fr_de_en \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
---reload_model "${NMT_EXP_DIR}/models/mlm_tlm_xnli15_1024.pth,${NMT_EXP_DIR}/models/mlm_tlm_xnli15_1024.pth" \
---data_path "${NMT_EXP_DIR}/data/processed/runmt" \
---lgs 'de-en-ar' \
---ae_steps 'de,en,ar' \
---mt_steps 'en-ar' \
+--reload_model "mlm_17_1280.pth,mlm_17_1280.pth" \
+--data_path "./data/processed/all/" \
+--lgs 'de-en-fr' \
+--ae_steps 'de,en,fr' \
+--mt_steps 'en-fr' \
 --bt_steps 'de-en-de,en-de-en' \
---rat_steps 'ar-en-de' \
+--rat_steps 'fr-en-de' \
 --word_shuffle 3 \
 --word_dropout 0.1 \
 --word_blank 0.1 \

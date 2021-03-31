@@ -15,7 +15,7 @@ pair=$1  # input language pair
 
 # data paths
 MAIN_PATH=${NMT_EXP_DIR}
-PARA_PATH=${NMT_EXP_DIR}/data/tlm
+PARA_PATH=$2
 
 # tools paths
 TOOLS_PATH=$PWD/tools
@@ -85,7 +85,7 @@ fi
 
 # en-fr
 if [ $pair == "en-fr" ]; then
-  echo "Download parallel data for English-Hindi"
+  echo "Download parallel data for English-French"
   # OpenSubtitles 2018
   # wget -c http://opus.nlpl.eu/download.php?f=OpenSubtitles2018%2Fen-fr.txt.zip -P $PARA_PATH
   # EU Bookshop
@@ -194,6 +194,7 @@ split_data() {
         seed="$1"; openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt </dev/zero 2>/dev/null
     };
     NLINES=`wc -l $1  | awk -F " " '{print $1}'`;
+
     NTRAIN=$((NLINES - 10000));
     NVAL=$((NTRAIN + 5000));
     shuf --random-source=<(get_seeded_random 42) $1 | head -$NTRAIN             > $2;
