@@ -74,11 +74,16 @@ def set_dico_parameters(params, data, dico):
     """
     Update dictionary parameters.
     """
+    # NOTE: this causes an error with multiple languages
+    # print(len(data['dico']))
+    print(len(dico))
     if 'dico' in data:
+        print("TRUE")
         assert data['dico'] == dico
     else:
-        data['dico'] = dico
+        data['dico'] = dico 
 
+  
     n_words = len(dico)
     bos_index = dico.index(BOS_WORD)
     eos_index = dico.index(EOS_WORD)
@@ -109,7 +114,7 @@ def load_mono_data(params, data):
     data['mono_stream'] = {}
 
     for lang in params.mono_dataset.keys():
-
+        print(lang)
         logger.info('============ Monolingual data (%s)' % lang)
 
         assert lang in params.langs and lang not in data['mono']
@@ -117,14 +122,16 @@ def load_mono_data(params, data):
         data['mono_stream'][lang] = {}
 
         for splt in ['train', 'valid', 'test']:
-
+            print(lang, splt)
             # no need to load training data for evaluation
             if splt == 'train' and params.eval_only:
                 continue
 
             # load data / update dictionary parameters / update data
             mono_data = load_binarized(params.mono_dataset[lang][splt], params)
+        
             set_dico_parameters(params, data, mono_data['dico'])
+        
 
             # create stream dataset
             bs = params.batch_size if splt == 'train' else 1
@@ -302,6 +309,7 @@ def check_data_params(params):
     }
     for paths in params.mono_dataset.values():
         for p in paths.values():
+            print(p)
             if not os.path.isfile(p):
                 logger.error(f"{p} not found")
     assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
@@ -320,6 +328,7 @@ def check_data_params(params):
     }
     for paths in params.para_dataset.values():
         for p1, p2 in paths.values():
+            print(p1, p2)
             if not os.path.isfile(p1):
                 logger.error(f"{p1} not found")
             if not os.path.isfile(p2):

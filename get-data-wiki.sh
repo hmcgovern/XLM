@@ -15,7 +15,8 @@ lg=$1  # input language
 
 # data path
 MAIN_PATH=$PWD
-WIKI_PATH=${NMT_EXP_DIR}/data/wiki
+# WIKI_PATH=${NMT_EXP_DIR}/data/wiki
+WIKI_PATH=$2
 
 # tools paths
 TOOLS_PATH=$PWD/tools

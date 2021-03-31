@@ -98,7 +98,18 @@ test_environment:
 en-de: mlm_ende_1024.pth codes_ende vocab_ende
 	@bash get-data-nmt.sh --src de --tgt en --reload_codes codes_ende --reload_vocab vocab_ende
 
+en-ro: mlm_enro_1024.pth codes_enro vocab_enro
+	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
+
 # NOTE: these can be condensed with rules, will be useful when there's a lot of them
+mlm_enro_1024.pth:
+	wget -c https://dl.fbaipublicfiles.com/XLM/mlm_enro_1024.pth
+codes_enfr:
+	wget -c https://dl.fbaipublicfiles.com/XLM/codes_enro
+
+vocab_enro:
+	wget -c https://dl.fbaipublicfiles.com/XLM/vocab_enro
+
 mlm_ende_1024.pth:
 	wget -c https://dl.fbaipublicfiles.com/XLM/mlm_ende_1024.pth
 
@@ -108,23 +119,39 @@ codes_ende:
 vocab_ende:
 	wget -c https://dl.fbaipublicfiles.com/XLM/vocab_ende
 
-mlm_tlm_xnli15_1024.pth:
-	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/mlm_tlm_xnli15_1024.pth
+mlm_xnli17_1280.pth:
+	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/mlm_17_1280.pth
 
-codes_xnli_15:
-	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/codes_xnli_15
+codes_xnli_17:
+	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/codes_xnli_17
 
-vocab_xnli_15:
-	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/vocab_xnli_15
+vocab_xnli_17:
+	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/vocab_xnli_17
 
+	# for lg in ar de en ; do \
+  	# 	./get-data-wiki.sh $$lg ${NMT_EXP_DIR}/data/wiki ; \
+	# done
 
-xnli: mlm_tlm_xnli15_1024.pth codes_xnli_15 vocab_xnli_15
-	@bash get-lotsa-data.sh
+download-runmt-data: mlm_xnli17_1280.pth codes_xnli_17 vocab_xnli_17
+	@bash get-data-nmt.sh --src en --tgt fr --reload_codes codes_xnli_17 --reload_vocab vocab_xnli_17
+	@bash get-data-nmt.sh --src de --tgt en --reload_codes codes_xnli_17 --reload_vocab vocab_xnli_17
 
+	for pair in en-fr ; do \
+		./get-data-para.sh $$pair ./data/runmt_para ; \
+		./prepare-multi-data-nmt.sh $$pair ; \
+	done
+
+bpe-runmt-data: 
+	for lg in ar
+
+runmt-data: download-runmt-data bpe-runmt-data mlm_tlm_xnli15_1024.pth codes_xnli_15 vocab_xnli_15
 
 train: #get_pretrained
 	@bash train.sh 
 	#$(PROJECT_NAME) 
+
+train_runmt:
+	@bash train_ref_agreement.sh
 
 
 #################################################################################

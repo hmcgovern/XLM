@@ -1178,6 +1178,109 @@ class EncDecTrainer(Trainer):
         self.stats['processed_w'] += (len1 - 1).sum().item()
 
 #######################################################################
+#######################################################################
+    def ref_step(self, lang1, lang2, lang3, lambda_coeff):
+        """
+        Reference Agreement Step
+        Given lang1 and lang2, which are connected with parallel data, 
+        simultaneously generates a translation in the target language by taking votes on the next-word prediction
+        then trains lang1-->lang3 and lang2-->lang3 with the generated translation as gold label target.
+        """
+        # area for assert statements
+        assert lambda_coeff >= 0
+        if lambda_coeff == 0:
+            return
+        # ensuring that lang1 and lang2 have parallel data btw them
+        _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
+        assert (_lang1, _lang2) in self.params.para_dataset.keys()
+        # maybe assert _lang1, _lang2 in self.params.para_dataset.keys() if this doesn't work?
+    
+        params = self.params
+         
+        _encoder = self.encoder.module if params.multi_gpu else self.encoder
+        _decoder = self.decoder.module if params.multi_gpu else self.decoder
+
+        lang1_id = params.lang2id[lang1]
+        lang2_id = params.lang2id[lang2]
+        lang3_id = params.lang2id[lang3]
+
+        # generate batch
+        (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2)
+        langs1 = x1.clone().fill_(lang1_id)
+        langs2 = x2.clone().fill_(lang2_id)
+
+        # cuda
+        x1, len1, langs1, x2, len2, langs2 = to_cuda(x1, len1, langs1, \
+                                                        x2, len2, langs2)
+
+        with torch.no_grad():
+            self.encoder.eval()
+            self.decoder.eval()
+            
+            # encode source and reference sentences (parallel to each other)
+            enc1 = self._encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1 = enc1.transpose(0, 1)
+
+            enc2 = self._encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+            enc2 = enc2.transpose(0,1)
+
+            # translate them to target using votes from the two encodings
+            x3, len3 = self._decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5))
+            langs3 = x3.clone().fill_(lang3_id)
+            
+            # free CUDA memory
+            del enc1
+            del enc2
+
+            if self.n_iter % 100 == 0:
+                source = []
+                source.extend(convert_to_text(x1, len1, self.data['dico'], params))
+                ref = []
+                ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
+                voted = []
+                voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
+                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_iter, metadata={'category': 'rat_step'})
+
+            
+            self._encoder.train()
+            self._decoder.train()
+        
+        # # the agreed-upon translation, length, and lang_id
+        # x3, len3, langs3= to_cuda(x3, len3, langs3)
+        
+        # encode generated agreed-upon translation
+        enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=lang3, causal=False)
+        enc3 = enc3.transpose(0,1)
+
+        
+        # words to predict
+        alen = torch.arange(len3.max(), dtype=torch.long, device=len3.device)
+        pred_mask = alen[:, None] < len3[None] - 1  # do not predict anything given the last target word
+        y3 = x3[1:].masked_select(pred_mask[:-1])
+
+        # decode from source
+        dec1 = self.decoder('fwd', x=x1, lengths=len1, langs=lang1, causal=True, src_enc=enc3, src_len=len3)
+        # decode from reference
+        dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=lang2, causal=True, src_enc=enc3, src_len=len3)
+
+        # loss is the sum of loss of S-->T and R-->T
+        _, loss1 = self.decoder('predict', tensor=dec1, pred_mask=pred_mask, y=y3, get_scores=False)
+        _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y3, get_scores=False)
+        
+        loss = loss1.add(loss2)
+        self.stats[('RAT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
+        loss = lambda_coeff * loss
+
+        # optimize
+        self.optimize(loss)
+
+        # number of processed sentences / words
+        # NOTE: not sure which len we should use here, guessing target (3rd)
+        self.n_sentences += params.batch_size
+        self.stats['processed_s'] += len3.size(0)
+        self.stats['processed_w'] += (len3 - 1).sum().item()
+
+####################################################################### 
     
     def bt_step(self, lang1, lang2, lang3, lambda_coeff):
         """
