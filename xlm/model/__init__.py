@@ -176,7 +176,7 @@ def build_model(params, dico):
                         if name % i not in dec_reload:
                             logger.warning("Parameter %s not found." % (name % i))
                             dec_reload[name % i] = decoder.state_dict()[name % i]
-                decoder.load_state_dict(dec_reload, strict=False) #NOTE: strict arg was added by me
+                decoder.load_state_dict(dec_reload) #NOTE: strict arg was added by me
 
         logger.debug("Encoder: {}".format(encoder))
         logger.debug("Decoder: {}".format(decoder))
