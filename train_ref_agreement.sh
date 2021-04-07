@@ -10,7 +10,7 @@ python ./train.py \
 --exp_name unsupMT_en_fr_ro \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
 --reload_model "mlm_100_1280.pth,mlm_100_1280.pth" \
---data_path "${NMT_DATA_DIR}/processed/" \
+--data_path "${NMT_DATA_DIR}/processed/all/" \
 --lgs 'en-fr-ro' \
 --ae_steps 'ro,en,fr' \
 --mt_steps 'en-fr' \
@@ -27,23 +27,24 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---batch_size 2 \
+--tokens_per_batch 1 \
+--max_len 200 \
 --max_vocab 200000 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
---epoch_size 100 \
+--epoch_size 10 \
 --eval_bleu true \
---stopping_criterion 'valid_en-de_mt_bleu,3' \
---validation_metrics 'valid_en-de_mt_bleu' \
---amp 2 \
---accumulate_gradients 4 \
---fp16 true \
+--stopping_criterion 'valid_en-ro_mt_bleu,3' \
+--validation_metrics 'valid_en-ro_mt_bleu' \
+
+# --amp 2 \
+# --accumulate_gradients 4 \
+# --fp16 true \
 # --master_port -1
 # --local_rank -1 \
 # --debug_train true \
 # --debug_slurm true \
 # --bptt 32 \
-# --max_len 200 \
-# --tokens_per_batch 80 \
+# --batch_size 2 \
 # --rabt_steps 'ar-en-de-ar-en' \
 # --xbt_steps \
 
@@ -51,3 +52,6 @@ python ./train.py \
 # batch_size wasn't set
 # tokens_per_batch was 2000
 # note: batchsize is for back_translation
+
+#  mt steps
+#  ae steps
