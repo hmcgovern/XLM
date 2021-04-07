@@ -6,6 +6,9 @@ export COMET_PROJECT_NAME='low-resource-mt'
 
 
 # WE ARE TRAINING AN EN-->RO MODEL WITH French (Fr) AS A REFERENCE LANGUAGE
+# export CUDA_VISIBLE_DEVICES=0,1,2,3
+# export NGPU=4
+# python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
 python ./train.py \
 --exp_name unsupMT_en_fr_ro \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
@@ -27,25 +30,27 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 500 \
---batch_size 32 \
---bptt 256 \
---max_len 200 \
+--batch_size 2 \
 --max_vocab 200000 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
---epoch_size 20000 \
+--epoch_size 100 \
 --eval_bleu true \
 --stopping_criterion 'valid_en-de_mt_bleu,3' \
 --validation_metrics 'valid_en-de_mt_bleu' \
---debug_slurm true \
---amp 1 \
+--amp 2 \
 --accumulate_gradients 4 \
 --fp16 true \
+# --master_port -1
+# --local_rank -1 \
 # --debug_train true \
-
-
-
+# --debug_slurm true \
+# --bptt 32 \
+# --max_len 200 \
+# --tokens_per_batch 80 \
 # --rabt_steps 'ar-en-de-ar-en' \
 # --xbt_steps \
 
+#bptt was 256
+# batch_size wasn't set
+# tokens_per_batch was 2000
 # note: batchsize is for back_translation
