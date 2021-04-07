@@ -933,6 +933,7 @@ class EncDecTrainer(Trainer):
             del enc1
             del enc2
 
+            # logging to comet
             if self.n_iter % 100 == 0:
                 source = []
                 source.extend(convert_to_text(x1, len1, self.data['dico'], params))
@@ -952,7 +953,6 @@ class EncDecTrainer(Trainer):
         # encode generated agreed-upon translation
         enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=lang3, causal=False)
         enc3 = enc3.transpose(0,1)
-
         
         # words to predict
         alen = torch.arange(len3.max(), dtype=torch.long, device=len3.device)

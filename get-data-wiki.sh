@@ -14,9 +14,9 @@ set -e
 lg=$1  # input language
 
 # data path
-MAIN_PATH=$PWD
-# WIKI_PATH=${NMT_EXP_DIR}/data/wiki
-WIKI_PATH=$2
+MAIN_PATH=$NMT_DATA_DIR
+WIKI_PATH=${NMT_DATA_DIR}/wiki
+# WIKI_PATH=$2
 
 # tools paths
 TOOLS_PATH=$PWD/tools
@@ -28,7 +28,7 @@ WIKI_DUMP_NAME=${lg}wiki-latest-pages-articles.xml.bz2
 WIKI_DUMP_LINK=https://dumps.wikimedia.org/${lg}wiki/latest/$WIKI_DUMP_NAME
 
 # install tools
-./install-tools.sh
+# ./install-tools.sh
 
 # create Wiki paths
 mkdir -p $WIKI_PATH/bz2
