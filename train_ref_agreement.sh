@@ -27,7 +27,6 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
-<<<<<<< HEAD
 --batch_size 2 \
 --max_vocab 200000 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
@@ -51,27 +50,4 @@ python ./train.py \
 #bptt was 256
 # batch_size wasn't set
 # tokens_per_batch was 2000
-=======
---tokens_per_batch 500 \
---batch_size 32 \
---bptt 256 \
---max_len 200 \
---max_vocab 200000 \
---optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
---epoch_size 20000 \
---eval_bleu true \
---stopping_criterion 'valid_en-de_mt_bleu,3' \
---validation_metrics 'valid_en-de_mt_bleu' \
---debug_slurm true \
---amp 1 \
---accumulate_gradients 4 \
---fp16 true \
-# --debug_train true \
-
-
-
-# --rabt_steps 'ar-en-de-ar-en' \
-# --xbt_steps \
-
->>>>>>> adding_langs
 # note: batchsize is for back_translation

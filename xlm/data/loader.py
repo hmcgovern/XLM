@@ -64,11 +64,7 @@ def load_binarized(path, params):
         if os.path.isfile(split_path):
             assert params.split_data is False
             path = split_path
-<<<<<<< HEAD
     # print(f'looking for {path}')
-=======
-    print(f'looking for {path}')
->>>>>>> adding_langs
     assert os.path.isfile(path), path
     logger.info("Loading data from %s ..." % path)
     data = torch.load(path)
@@ -82,11 +78,7 @@ def set_dico_parameters(params, data, dico):
     """
 
     if 'dico' in data:
-<<<<<<< HEAD
         # print("TRUE")
-=======
-        print("TRUE")
->>>>>>> adding_langs
         assert data['dico'] == dico
     else:
         data['dico'] = dico 
@@ -122,11 +114,7 @@ def load_mono_data(params, data):
     data['mono_stream'] = {}
 
     for lang in params.mono_dataset.keys():
-<<<<<<< HEAD
         # print(lang)
-=======
-        print(lang)
->>>>>>> adding_langs
         logger.info('============ Monolingual data (%s)' % lang)
 
         assert lang in params.langs and lang not in data['mono']
@@ -134,11 +122,7 @@ def load_mono_data(params, data):
         data['mono_stream'][lang] = {}
 
         for splt in ['train', 'valid', 'test']:
-<<<<<<< HEAD
             # print(lang, splt)
-=======
-            print(lang, splt)
->>>>>>> adding_langs
             # no need to load training data for evaluation
             if splt == 'train' and params.eval_only:
                 continue
@@ -323,7 +307,6 @@ def check_data_params(params):
             for splt in ['train', 'valid', 'test']
         } for lang in params.langs if lang in required_mono
     }
-<<<<<<< HEAD
     # print(params.mono_dataset)
     for paths in params.mono_dataset.values():
         for p in paths.values():
@@ -332,16 +315,6 @@ def check_data_params(params):
                 logger.error(f"{p} not found")
     assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
     # print('PASSED MONO')
-=======
-    print(params.mono_dataset)
-    for paths in params.mono_dataset.values():
-        for p in paths.values():
-            print(p)
-            if not os.path.isfile(p):
-                logger.error(f"{p} not found")
-    assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
-    print('PASSED MONO')
->>>>>>> adding_langs
 
     # check parallel datasets
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps)
@@ -358,17 +331,10 @@ def check_data_params(params):
         } for src in params.langs for tgt in params.langs
         if src < tgt and ((src, tgt) in required_para or (tgt, src) in required_para)
     }
-<<<<<<< HEAD
     # print(params.para_dataset)
     for paths in params.para_dataset.values():
         for p1, p2 in paths.values():
             # print(p1, p2)
-=======
-    print(params.para_dataset)
-    for paths in params.para_dataset.values():
-        for p1, p2 in paths.values():
-            print(p1, p2)
->>>>>>> adding_langs
             if not os.path.isfile(p1):
                 logger.error(f"{p1} not found")
             if not os.path.isfile(p2):
