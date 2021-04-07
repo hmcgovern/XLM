@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2019-present, Facebook, Inc.
 # All rights reserved.
 #
@@ -12,10 +13,47 @@
 set -e
 
 pair=$1  # input language pair
+RELOAD_CODES=$2
+RELOAD_VOCAB=$3
+
+echo $pair $RELOAD_CODES $RELOAD_VOCAB
+
+# #
+# # Read arguments
+# #
+# POSITIONAL=()
+# while [[ $# -gt 0 ]]
+# do
+# key="$1"
+# case $key in
+#   --pair)
+#     pair="$2"; shift 2;;
+#   --reload_codes)
+#     RELOAD_CODES="$2"; shift 2;;
+#   --reload_vocab)
+#     RELOAD_VOCAB="$2"; shift 2;;
+#   *)
+#   POSITIONAL+=("$1")
+#   shift
+#   ;;
+# esac
+# done
+# set -- "${POSITIONAL[@]}"
+
+
+#
+# Check parameters
+#
+
+if [ "$RELOAD_CODES" != "" ] && [ ! -f "$RELOAD_CODES" ]; then echo "cannot locate BPE codes"; exit; fi
+if [ "$RELOAD_VOCAB" != "" ] && [ ! -f "$RELOAD_VOCAB" ]; then echo "cannot locate vocabulary"; exit; fi
+if [ "$RELOAD_CODES" == "" -a "$RELOAD_VOCAB" != "" -o "$RELOAD_CODES" != "" -a "$RELOAD_VOCAB" == "" ]; then echo "BPE codes should be provided if and only if vocabulary is also provided"; exit; fi
+
 
 # data paths
-MAIN_PATH=${NMT_EXP_DIR}
-PARA_PATH=$2
+MAIN_PATH=$PWD
+PARA_PATH=${NMT_DATA_DIR}/para/$pair
+OUTPATH=${NMT_DATA_DIR}/processed/$pair
 
 # tools paths
 TOOLS_PATH=$PWD/tools
@@ -27,6 +65,7 @@ LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # create directories
 mkdir -p $PARA_PATH
+mkdir -p $OUTPATH/para
 
 
 #
@@ -87,12 +126,13 @@ fi
 if [ $pair == "en-fr" ]; then
   echo "Download parallel data for English-French"
   # OpenSubtitles 2018
-  # wget -c http://opus.nlpl.eu/download.php?f=OpenSubtitles2018%2Fen-fr.txt.zip -P $PARA_PATH
+  wget -c http://opus.nlpl.eu/download.php?f=OpenSubtitles2018%2Fen-fr.txt.zip -P $PARA_PATH
+  unzip -u $PARA_PATH/download.php?f=OpenSubtitles2018%2Fen-fr.txt.zip -d $PARA_PATH
   # EU Bookshop
   # wget -c http://opus.nlpl.eu/download.php?f=EUbookshop%2Fen-fr.txt.zip -P $PARA_PATH
   # MultiUN
-  wget -c https://object.pouta.csc.fi/OPUS-MultiUN/v1/moses/en-fr.txt.zip -P $PARA_PATH
-  unzip -u $PARA_PATH/en-fr.txt.zip -d $PARA_PATH
+  # wget -c https://object.pouta.csc.fi/OPUS-MultiUN/v1/moses/en-fr.txt.zip -P $PARA_PATH
+  # unzip -u $PARA_PATH/en-fr.txt.zip -d $PARA_PATH
 fi
 
 # en-hi
@@ -171,6 +211,7 @@ if [ $pair == "en-zh" ]; then
   echo "Download parallel data for English-Chinese"
   # OpenSubtitles 2016
   # wget -c http://opus.nlpl.eu/download.php?f=OpenSubtitles2016%2Fen-zh.txt.zip -P $PARA_PATH
+  # unzip -u $PARA_PATH/download.php?f=OpenSubtitles2016%2Fen-zh.txt.zip -d $PARA_PATH
   # MultiUN
   wget -c http://opus.nlpl.eu/download.php?f=MultiUN%2Fen-zh.txt.zip -P $PARA_PATH
   unzip -u $PARA_PATH/download.php?f=MultiUN%2Fen-zh.txt.zip -d $PARA_PATH
@@ -184,7 +225,9 @@ fi
 # tokenize
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
-    cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
+    # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
+    # removing bc the model i'm using only tokenizes, doesn't remove accents and lowercase
+    cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
   fi
 done
 
@@ -201,7 +244,28 @@ split_data() {
     shuf --random-source=<(get_seeded_random 42) $1 | head -$NVAL | tail -5000  > $3;
     shuf --random-source=<(get_seeded_random 42) $1 | tail -5000                > $4;
 }
+
+
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   split_data $PARA_PATH/$pair.$lg.all $PARA_PATH/$pair.$lg.train $PARA_PATH/$pair.$lg.valid $PARA_PATH/$pair.$lg.test
+done
+
+echo "has been successfully split!"
+## adding the binarization here
+# reload BPE codes
+cd $MAIN_PATH
+echo "looking for BPE codes in"
+echo ${RELOAD_CODES}
+
+
+# fastBPE
+FASTBPE_DIR=$TOOLS_PATH/fastBPE
+FASTBPE=$TOOLS_PATH/fastBPE/fast
+
+for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+  for split in train valid test; do
+    $FASTBPE applybpe $OUTPATH/para/$pair.$lg.$split $PARA_PATH/$pair.$lg.$split $OUTPATH/codes
+    python preprocess.py $OUTPATH/vocab.$pair $OUTPATH/para/$pair.$lg.$split
+  done
 done
 

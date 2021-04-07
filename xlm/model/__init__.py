@@ -141,7 +141,7 @@ def build_model(params, dico):
     else:
         # build
         # NOTE: modified from True to False with_output
-        encoder = TransformerModel(params, dico, is_encoder=True, with_output=False)  # TODO: only output when necessary - len(params.clm_steps + params.mlm_steps) > 0
+        encoder = TransformerModel(params, dico, is_encoder=True, with_output=True)  # TODO: only output when necessary - len(params.clm_steps + params.mlm_steps) > 0
         decoder = TransformerModel(params, dico, is_encoder=False, with_output=True)
 
         # reload pretrained word embeddings
@@ -176,7 +176,7 @@ def build_model(params, dico):
                         if name % i not in dec_reload:
                             logger.warning("Parameter %s not found." % (name % i))
                             dec_reload[name % i] = decoder.state_dict()[name % i]
-                decoder.load_state_dict(dec_reload)
+                decoder.load_state_dict(dec_reload, strict=False) #NOTE: strict arg was added by me
 
         logger.debug("Encoder: {}".format(encoder))
         logger.debug("Decoder: {}".format(decoder))

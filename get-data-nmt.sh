@@ -11,8 +11,8 @@ set -e
 #
 # Data preprocessing configuration
 #
-# N_MONO=5000000  # number of monolingual sentences for each language
-N_MONO=60000  # number of monolingual sentences for each language
+N_MONO=5000000  # number of monolingual sentences for each language
+# N_MONO=60000  # number of monolingual sentences for each language
 # this really should be used, just use existing codes file
 CODES=60000     # number of BPE codes
 N_THREADS=16    # number of threads in data preprocessing
@@ -48,8 +48,8 @@ set -- "${POSITIONAL[@]}"
 #
 if [ "$SRC" == "" ]; then echo "--src not provided"; exit; fi
 if [ "$TGT" == "" ]; then echo "--tgt not provided"; exit; fi
-if [ "$SRC" != "de" -a "$SRC" != "en" -a "$SRC" != "fr" -a "$SRC" != "ro" ]; then echo "unknown source language"; exit; fi
-if [ "$TGT" != "de" -a "$TGT" != "en" -a "$TGT" != "fr" -a "$TGT" != "ro" ]; then echo "unknown target language"; exit; fi
+if [ "$SRC" != "de" -a "$SRC" != "en" -a "$SRC" != "fr" -a "$SRC" != "ro" -a "$SRC" != "zh" ]; then echo "unknown source language"; exit; fi
+if [ "$TGT" != "de" -a "$TGT" != "en" -a "$TGT" != "fr" -a "$TGT" != "ro" -a "$TGT" != "zh" ]; then echo "unknown target language"; exit; fi
 if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit; fi
 if [ "$SRC" \> "$TGT" ]; then echo "please ensure SRC < TGT"; exit; fi
 if [ "$RELOAD_CODES" != "" ] && [ ! -f "$RELOAD_CODES" ]; then echo "cannot locate BPE codes"; exit; fi
@@ -62,10 +62,10 @@ if [ "$RELOAD_CODES" == "" -a "$RELOAD_VOCAB" != "" -o "$RELOAD_CODES" != "" -a 
 #
 
 # main paths
-# MAIN_PATH=$PWD
-MAIN_PATH=/${XLM_REPO_DIR}
-TOOLS_PATH=/${XLM_REPO_DIR}/tools
-DATA_PATH=$PWD/data
+MAIN_PATH=$PWD
+# MAIN_PATH=${NMT_DATA_DIR}
+TOOLS_PATH=/$PWD/tools
+DATA_PATH=${NMT_DATA_DIR}
 MONO_PATH=$DATA_PATH/mono
 PARA_PATH=$DATA_PATH/para
 PROC_PATH=$DATA_PATH/processed/$SRC-$TGT
@@ -154,39 +154,39 @@ fi
 
 cd $MONO_PATH
 
-# if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
-#   echo "Downloading German monolingual data ..."
-#   mkdir -p $MONO_PATH/de
-#   cd $MONO_PATH/de
-#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
-#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.de.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.de.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.de.shuffled.v2.gz
-#   # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
-#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
-#   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
-# fi
+if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
+  echo "Downloading German monolingual data ..."
+  mkdir -p $MONO_PATH/de
+  cd $MONO_PATH/de
+  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
+  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.de.shuffled.v2.gz
+  # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
+  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
+  # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
+fi
 
-# if [ "$SRC" == "en" -o "$TGT" == "en" ]; then
-#   echo "Downloading English monolingual data ..."
-#   mkdir -p $MONO_PATH/en
-#   cd $MONO_PATH/en
-#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.en.shuffled.gz
-#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.en.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.en.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.en.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.en.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.en.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.en.shuffled.gz
-#   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.en.shuffled.v2.gz
-#   # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.en.shuffled.gz
-#   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.en.shuffled.gz
-#   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.en.shuffled.deduped.gz
-# fi
+if [ "$SRC" == "en" -o "$TGT" == "en" ]; then
+  echo "Downloading English monolingual data ..."
+  mkdir -p $MONO_PATH/en
+  cd $MONO_PATH/en
+  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.en.shuffled.gz
+  # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.en.shuffled.v2.gz
+  # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.en.shuffled.gz
+  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.en.shuffled.gz
+  # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.en.shuffled.deduped.gz
+fi
 
 if [ "$SRC" == "fr" -o "$TGT" == "fr" ]; then
   echo "Downloading French monolingual data ..."
@@ -204,6 +204,28 @@ if [ "$SRC" == "fr" -o "$TGT" == "fr" ]; then
   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.fr.shuffled.gz
   # wget -c http://data.statmt.org/wmt17/translation-task/news.2017.fr.shuffled.gz
 fi
+
+
+if [ "$SRC" == "zh" -o "$TGT" == "zh" ]; then
+  echo "Downloading Chinese monolingual data ..."
+  mkdir -p $MONO_PATH/zh
+  cd $MONO_PATH/zh
+
+  wget -c http://data.statmt.org/news-crawl/zh/news.2008.zh.shuffled.deduped.gz 
+  wget -c http://data.statmt.org/news-crawl/zh/news.2010.zh.shuffled.deduped.gz 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2011.zh.shuffled.deduped.gz 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2012.zh.shuffled.deduped.gz	 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2013.zh.shuffled.deduped.gz 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2014.zh.shuffled.deduped.gz 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2015.zh.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2016.zh.shuffled.deduped.gz	 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2017.zh.shuffled.deduped.gz	 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2018.zh.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2019.zh.shuffled.deduped.gz	 
+  # wget -c http://data.statmt.org/news-crawl/zh/news.2020.zh.shuffled.deduped.gz	
+
+fi
+
 
 if [ "$SRC" == "ro" -o "$TGT" == "ro" ]; then
   echo "Downloading Romanian monolingual data ..."
@@ -291,7 +313,6 @@ if [ ! -f "$BPE_CODES" ] && [ -f "$RELOAD_CODES" ]; then
   echo "Reloading BPE codes from $RELOAD_CODES ..."
   cp $RELOAD_CODES $BPE_CODES
 fi
-
 
 # learn BPE codes
 if [ ! -f "$BPE_CODES" ]; then
