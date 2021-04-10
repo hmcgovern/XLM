@@ -141,10 +141,30 @@ download-runmt-data: mlm_xnli17_1280.pth codes_xnli_17 vocab_xnli_17
 		./prepare-multi-data-nmt.sh $$pair ; \
 	done
 
-bpe-runmt-data: 
-	for lg in ar
+clean_para:
+	rm -r ${NMT_DATA_DIR}/processed/en-fr/para/
+	rm ${NMT_DATA_DIR}/processed/en-fr/codes
+	rm ${NMT_DATA_DIR}/processed/en-fr/vocab.en-fr
+	rm ${NMT_DATA_DIR}/processed/en-fr/vocab.en
+	rm ${NMT_DATA_DIR}/processed/en-fr/vocab.fr
 
-runmt-data: download-runmt-data bpe-runmt-data mlm_tlm_xnli15_1024.pth codes_xnli_15 vocab_xnli_15
+	rm -r ${NMT_DATA_DIR}/processed/en-ro/para/
+	rm ${NMT_DATA_DIR}/processed/en-ro/codes
+	rm ${NMT_DATA_DIR}/processed/en-ro/vocab.en-ro
+	rm ${NMT_DATA_DIR}/processed/en-ro/vocab.en
+	rm ${NMT_DATA_DIR}/processed/en-ro/vocab.ro
+
+	rm -r ${NMT_DATA_DIR}/processed/de-en/para/
+	rm ${NMT_DATA_DIR}/processed/de-en/codes
+	rm ${NMT_DATA_DIR}/processed/de-en/vocab.de-en
+	rm ${NMT_DATA_DIR}/processed/de-en/vocab.de
+	rm ${NMT_DATA_DIR}/processed/de-en/vocab.en
+	
+	rm -r ${NMT_DATA_DIR}/processed/en-zh/para/
+	rm ${NMT_DATA_DIR}/processed/en-zh/codes
+	rm ${NMT_DATA_DIR}/processed/en-zh/vocab.en-zh
+	rm ${NMT_DATA_DIR}/processed/en-zh/vocab.en
+	rm ${NMT_DATA_DIR}/processed/en-zh/vocab.zh
 
 train: #get_pretrained
 	@bash train.sh 

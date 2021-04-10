@@ -5,53 +5,44 @@ export COMET_API_KEY="ZVTkXN5kScnbV6H4uBBZ97Qyv"
 export COMET_PROJECT_NAME='low-resource-mt'
 
 
-# WE ARE TRAINING AN EN-->RO MODEL WITH French (Fr) AS A REFERENCE LANGUAGE
+# WE ARE TRAINING AN EN-->DE MODEL WITH French (Fr) AS A REFERENCE LANGUAGE
 python ./train.py \
---exp_name unsupMT_en_fr_ro \
+--exp_name unsupMT_en_fr_de \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
---reload_model "mlm_100_1280.pth,mlm_100_1280.pth" \
---data_path "${NMT_DATA_DIR}/processed/all/" \
---lgs 'en-fr-ro' \
---ae_steps 'ro,en,fr' \
+--reload_model "mlm_tlm_xnli15_1024.pth,mlm_tlm_xnli15_1024.pth" \
+--data_path "${NMT_DATA_DIR}/processed/en_fr_de/" \
+--lgs 'en-fr-de' \
+--ae_steps 'en' \
 --mt_steps 'en-fr' \
---bt_steps 'en-ro-en,ro-en-ro' \
---rat_steps 'en-fr-ro' \
+--bt_steps 'en-de-en' \
+--rat_steps 'en-fr-de' \
 --word_shuffle 3 \
 --word_dropout 0.1 \
 --word_blank 0.1 \
 --lambda_ae '0:1,100000:0.1,300000:0' \
 --encoder_only false \
---emb_dim 1280 \
+--emb_dim 1024 \
 --n_layers 6 \
 --n_heads 8 \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 1 \
+--tokens_per_batch 100 \
 --max_len 200 \
---max_vocab 200000 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
---epoch_size 10 \
+--epoch_size 20000 \
 --eval_bleu true \
---stopping_criterion 'valid_en-ro_mt_bleu,3' \
---validation_metrics 'valid_en-ro_mt_bleu' \
-
+--stopping_criterion 'valid_en-de_mt_bleu,3' \
+--validation_metrics 'valid_en-de_mt_bleu' \
+--debug_train true \
+--use_lang_emb false \
+--max_vocab 95000 \
 # --amp 2 \
 # --accumulate_gradients 4 \
 # --fp16 true \
-# --master_port -1
-# --local_rank -1 \
-# --debug_train true \
-# --debug_slurm true \
-# --bptt 32 \
-# --batch_size 2 \
-# --rabt_steps 'ar-en-de-ar-en' \
-# --xbt_steps \
 
-#bptt was 256
-# batch_size wasn't set
-# tokens_per_batch was 2000
-# note: batchsize is for back_translation
+# --bptt 256 \
 
-#  mt steps
-#  ae steps
+# --ae_steps 'en,fr,de' \
+# --mt_steps 'en-fr' \
+# --bt_steps 'en-fr-en,fr-en-fr' \

@@ -366,6 +366,7 @@ class TransformerModel(nn.Module):
 
         # langs
         if langs is not None:
+            # print('LANGS', langs)
             assert langs.size() == (slen, bs)
             langs = langs.transpose(0, 1)
 
@@ -435,6 +436,7 @@ class TransformerModel(nn.Module):
             `y` is a LongTensor of shape (pred_mask.sum(),)
             `get_scores` is a boolean specifying whether we need to return scores
         """
+        print('tensor is shaped', tensor.size())
         masked_tensor = tensor[pred_mask.unsqueeze(-1).expand_as(tensor)].view(-1, self.dim)
         scores, loss = self.pred_layer(masked_tensor, y, get_scores)
         return scores, loss
@@ -471,6 +473,7 @@ class TransformerModel(nn.Module):
         positions = torch.arange(max_len, out=positions).unsqueeze(1).expand(max_len, bs)
 
         # language IDs
+        # print('TGT LANG ID', tgt_lang_id)
         langs = src_len.new(max_len).long().fill_(tgt_lang_id)
         langs = langs.unsqueeze(1).expand(max_len, bs)
 
@@ -498,8 +501,9 @@ class TransformerModel(nn.Module):
             )
             assert tensor.size() == (1, bs, self.dim), (cur_len, max_len, src_enc.size(), tensor.size(), (1, bs, self.dim))
             tensor = tensor.data[-1, :, :].type_as(src_enc)  # (bs, dim)
+            # print('TENSOR SIZE', tensor.size())
             scores = self.pred_layer.get_scores(tensor)      # (bs, n_words)
-
+            # print('SCORES SIZE', scores.size()) # okay, scores is size [x, max_vocab_len]
             # select next words: sample or greedy
             if sample_temperature is None:
                 next_words = torch.topk(scores, 1)[1].squeeze(1)
@@ -526,7 +530,7 @@ class TransformerModel(nn.Module):
 
         return generated[:cur_len], gen_len
 
-    def generate_from_votes(self, src_enc1, src_len1, src_enc2, src_len2, tgt_lang_id, max_len=200, sample_temperature=None):
+    def generate_from_votes(self, src_enc1, src_enc2, src_len1, src_len2, tgt_lang_id, max_len=200, sample_temperature=None):
         """
         Decode a sentence given initial start from multiple source encodings.
         `x`:
@@ -545,36 +549,38 @@ class TransformerModel(nn.Module):
         NOTE: we want to eventually extend this to consider n number of source encodings
         """
 
+        # print('len1, len2', src_len1, src_len2) # NOT THE SAME
         # input batches
-        bs1 = len(src_len1)
-        assert src_enc1.size(0) == bs1
+        bs = len(src_len1) # this will be the same tho bc it's the size
+        assert src_enc1.size(0) == bs
 
-        bs2 = len(src_len2)
-        assert src_enc2.size(0) == bs2
+        # bs2 = len(src_len2)
+        # assert src_enc2.size(0) == bs2
 
         # generated sentences
         # NOTE: not sure if these need to be separated like this 
-        generated_1 = src_len1.new(max_len, bs1)  # upcoming output
-        generated_1.fill_(self.pad_index)       # fill upcoming ouput with <PAD>
-        generated_1[0].fill_(self.eos_index)    # we use <EOS> for <BOS> everywhere
+        generated = src_len1.new(max_len, bs)  # upcoming output
+        generated.fill_(self.pad_index)       # fill upcoming ouput with <PAD>
+        generated[0].fill_(self.eos_index)    # we use <EOS> for <BOS> everywhere
 
-        generated_2 = src_len2.new(max_len, bs2)  # upcoming output
-        generated_2.fill_(self.pad_index)       # fill upcoming ouput with <PAD>
-        generated_2[0].fill_(self.eos_index)    # we use <EOS> for <BOS> everywhere
+        # generated_2 = src_len2.new(max_len, bs2)  # upcoming output
+        # generated_2.fill_(self.pad_index)       # fill upcoming ouput with <PAD>
+        # generated_2[0].fill_(self.eos_index)    # we use <EOS> for <BOS> everywhere
 
         # positions
         positions1 = src_len1.new(max_len).long()
-        positions1 = torch.arange(max_len, out=positions1).unsqueeze(1).expand(max_len, bs1)
+        positions1 = torch.arange(max_len, out=positions1).unsqueeze(1).expand(max_len, bs)
 
         positions2 = src_len2.new(max_len).long()
-        positions2 = torch.arange(max_len, out=positions2).unsqueeze(1).expand(max_len, bs2)
+        positions2 = torch.arange(max_len, out=positions2).unsqueeze(1).expand(max_len, bs)
 
         # language IDs
+        # print('tgt_lang_id', tgt_lang_id)
         langs1 = src_len1.new(max_len).long().fill_(tgt_lang_id)
-        langs1 = langs1.unsqueeze(1).expand(max_len, bs1)
+        langs1 = langs1.unsqueeze(1).expand(max_len, bs)
 
         langs2 = src_len2.new(max_len).long().fill_(tgt_lang_id)
-        langs2 = langs2.unsqueeze(1).expand(max_len, bs2)
+        langs2 = langs2.unsqueeze(1).expand(max_len, bs)
 
         # current position / max lengths / length of generated sentences / unfinished sentences
         cur_len = 1 # this is shared
@@ -583,7 +589,8 @@ class TransformerModel(nn.Module):
         unfinished_sents = src_len1.clone().fill_(1)
 
         # cache compute states
-        cache = {'slen': 0}
+        cache1 = {'slen': 0}
+        cache2 = {'slen': 0}
 
         # generation is done at the word level
         while cur_len < max_len:
@@ -595,42 +602,53 @@ class TransformerModel(nn.Module):
                 'fwd',
                 x=generated[:cur_len],
                 lengths=gen_len,
-                positions=positions[:cur_len],
-                langs=langs[:cur_len],
+                positions=positions1[:cur_len],
+                langs=langs1[:cur_len],
                 causal=True,
                 src_enc=src_enc1,
                 src_len=src_len1,
-                cache=cache
+                cache=cache1
             )
-            assert tensor1.size() == (1, bs1, self.dim), (cur_len, max_len, src_enc1.size(), tensor1.size(), (1, bs1, self.dim))
-            tensor = tensor1.data[-1, :, :].type_as(src_enc1)  # (bs, dim)
+            assert tensor1.size() == (1, bs, self.dim), (cur_len, max_len, src_enc1.size(), tensor1.size(), (1, bs, self.dim))
+            tensor1 = tensor1.data[-1, :, :].type_as(src_enc1)  # (bs, dim)
+            # print('rat TENSOR SIZE', tensor1.size())
             scores1 = self.pred_layer.get_scores(tensor1)      # (bs, n_words)
 
             tensor2 = self.forward(
                 'fwd',
                 x=generated[:cur_len],
                 lengths=gen_len,
-                positions=positions[:cur_len],
-                langs=langs[:cur_len],
+                positions=positions2[:cur_len],
+                langs=langs2[:cur_len],
                 causal=True,
                 src_enc=src_enc2,
                 src_len=src_len2,
-                cache=cache
+                cache=cache2
             )
-            assert tensor2.size() == (1, bs2, self.dim), (cur_len, max_len, src_enc2.size(), tensor2.size(), (1, bs2, self.dim))
-            tensor = tensor2.data[-1, :, :].type_as(src_enc2)  # (bs, dim)
+            assert tensor2.size() == (1, bs, self.dim), (cur_len, max_len, src_enc2.size(), tensor2.size(), (1, bs, self.dim))
+            tensor2 = tensor2.data[-1, :, :].type_as(src_enc2)  # (bs, dim)
             scores2 = self.pred_layer.get_scores(tensor2)      # (bs, n_words)
 
             # NOTE: here's the main thing! we average the scores and everything below this stays the same
             add_result = scores1.add(scores2)
-            scores = torch.mean(add_result)
+            # print(scores1[0])
+            # print(scores2[0])
+            # print(add_result[0])
+            scores = torch.div(add_result, 2)
+            # print(scores[0])
+            # print('AVG:', scores.size())
 
             # select next words: sample or greedy
             if sample_temperature is None:
                 next_words = torch.topk(scores, 1)[1].squeeze(1)
             else:
                 next_words = torch.multinomial(F.softmax(scores / sample_temperature, dim=1), 1).squeeze(1)
+            
+            # NOTE: this is a hack!
+            # try:
             assert next_words.size() == (bs,)
+            # except:
+            #     assert next_words.size() == (bs2,)
 
             # update generations / lengths / finished sentences / current length
             generated[cur_len] = next_words * unfinished_sents + self.pad_index * (1 - unfinished_sents)

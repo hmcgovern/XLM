@@ -312,6 +312,10 @@ def main(params):
             # back-translation steps
             for lang1, lang2, lang3 in shuf_order(params.bt_steps):
                 trainer.bt_step(lang1, lang2, lang3, params.lambda_bt)
+
+            # reference-agreement-translation steps
+            for lang1, lang2, lang3 in shuf_order(params.rat_steps):
+                trainer.rat_step(lang1, lang2, lang3, params.lambda_rat)
             
             experiment.log_metric('epoch', trainer.epoch)
             experiment.log_metric('n_iter', trainer.n_iter)

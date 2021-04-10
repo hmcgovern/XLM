@@ -904,6 +904,7 @@ class EncDecTrainer(Trainer):
         lang1_id = params.lang2id[lang1]
         lang2_id = params.lang2id[lang2]
         lang3_id = params.lang2id[lang3]
+        # print(lang1_id, lang2_id, lang3_id)
 
         # generate batch
         (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2)
@@ -919,14 +920,14 @@ class EncDecTrainer(Trainer):
             self.decoder.eval()
             
             # encode source and reference sentences (parallel to each other)
-            enc1 = self._encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1 = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
             enc1 = enc1.transpose(0, 1)
 
-            enc2 = self._encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+            enc2 = _encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
             enc2 = enc2.transpose(0,1)
 
             # translate them to target using votes from the two encodings
-            x3, len3 = self._decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5))
+            x3, len3 = _decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5))
             langs3 = x3.clone().fill_(lang3_id)
             
             # free CUDA memory
@@ -944,14 +945,16 @@ class EncDecTrainer(Trainer):
                 self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_iter, metadata={'category': 'rat_step'})
 
             
-            self._encoder.train()
-            self._decoder.train()
+            self.encoder.train()
+            self.decoder.train()
         
         # # the agreed-upon translation, length, and lang_id
         # x3, len3, langs3= to_cuda(x3, len3, langs3)
         
+
+
         # encode generated agreed-upon translation
-        enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=lang3, causal=False)
+        enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=langs3, causal=False)
         enc3 = enc3.transpose(0,1)
         
         # words to predict
@@ -960,9 +963,9 @@ class EncDecTrainer(Trainer):
         y3 = x3[1:].masked_select(pred_mask[:-1])
 
         # decode from source
-        dec1 = self.decoder('fwd', x=x1, lengths=len1, langs=lang1, causal=True, src_enc=enc3, src_len=len3)
+        dec1 = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc3, src_len=len3)
         # decode from reference
-        dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=lang2, causal=True, src_enc=enc3, src_len=len3)
+        dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc3, src_len=len3)
 
         # loss is the sum of loss of S-->T and R-->T
         _, loss1 = self.decoder('predict', tensor=dec1, pred_mask=pred_mask, y=y3, get_scores=False)
@@ -1316,6 +1319,7 @@ class EncDecTrainer(Trainer):
             enc1 = enc1.transpose(0, 1)
             x2, len2 = _decoder.generate(enc1, len1, lang2_id, max_len=int(1.3 * len1.max().item() + 5))
             langs2 = x2.clone().fill_(lang2_id)
+            # print('LANGS2', langs2)
             
             # NOTE: attempting to log the back-translation attempt just for viewing purposes
             # so i can monitor it over time 

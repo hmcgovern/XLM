@@ -78,7 +78,6 @@ def set_dico_parameters(params, data, dico):
     """
 
     if 'dico' in data:
-        # print("TRUE")
         assert data['dico'] == dico
     else:
         data['dico'] = dico 
@@ -114,7 +113,7 @@ def load_mono_data(params, data):
     data['mono_stream'] = {}
 
     for lang in params.mono_dataset.keys():
-        # print(lang)
+        
         logger.info('============ Monolingual data (%s)' % lang)
 
         assert lang in params.langs and lang not in data['mono']
@@ -129,7 +128,7 @@ def load_mono_data(params, data):
 
             # load data / update dictionary parameters / update data
             mono_data = load_binarized(params.mono_dataset[lang][splt], params)
-        
+            
             set_dico_parameters(params, data, mono_data['dico'])
         
 
@@ -177,6 +176,7 @@ def load_para_data(params, data):
 
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps + params.rat_steps) #+ params.rabt_steps + params.xbt_steps)
 
+    # print('REQUIRED PARA TRAIN', required_para_train)
     for src, tgt in params.para_dataset.keys():
 
         logger.info('============ Parallel data (%s-%s)' % (src, tgt))
@@ -196,10 +196,15 @@ def load_para_data(params, data):
 
             # load binarized datasets
             src_path, tgt_path = params.para_dataset[(src, tgt)][splt]
+            # print('SRC PATH', src_path)
+            # print('TGT PATH', tgt_path)
             src_data = load_binarized(src_path, params)
             tgt_data = load_binarized(tgt_path, params)
 
             # update dictionary parameters
+            # print(src, tgt)
+            # print(len(src_data['dico']))
+            # print(len(data['dico']))
             set_dico_parameters(params, data, src_data['dico'])
             set_dico_parameters(params, data, tgt_data['dico'])
 
@@ -316,6 +321,7 @@ def check_data_params(params):
     assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
     # print('PASSED MONO')
 
+    
     # check parallel datasets
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps)
     required_para = required_para_train | set([(l2, l3) for _, l2, l3 in params.bt_steps])
@@ -340,7 +346,7 @@ def check_data_params(params):
             if not os.path.isfile(p2):
                 logger.error(f"{p2} not found")
     assert all([all([os.path.isfile(p1) and os.path.isfile(p2) for p1, p2 in paths.values()]) for paths in params.para_dataset.values()])
-
+    # print('PASSED PARA')
     # check that we can evaluate on BLEU
     assert params.eval_bleu is False or len(params.mt_steps + params.bt_steps) > 0
 

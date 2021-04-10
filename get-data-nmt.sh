@@ -12,7 +12,6 @@ set -e
 # Data preprocessing configuration
 #
 N_MONO=5000000  # number of monolingual sentences for each language
-# N_MONO=60000  # number of monolingual sentences for each language
 # this really should be used, just use existing codes file
 CODES=60000     # number of BPE codes
 N_THREADS=16    # number of threads in data preprocessing
@@ -63,7 +62,6 @@ if [ "$RELOAD_CODES" == "" -a "$RELOAD_VOCAB" != "" -o "$RELOAD_CODES" != "" -a 
 
 # main paths
 MAIN_PATH=$PWD
-# MAIN_PATH=${NMT_DATA_DIR}
 TOOLS_PATH=/$PWD/tools
 DATA_PATH=${NMT_DATA_DIR}
 MONO_PATH=$DATA_PATH/mono
@@ -84,6 +82,8 @@ NORM_PUNC=$MOSES/scripts/tokenizer/normalize-punctuation.perl
 REM_NON_PRINT_CHAR=$MOSES/scripts/tokenizer/remove-non-printing-char.perl
 TOKENIZER=$MOSES/scripts/tokenizer/tokenizer.perl
 INPUT_FROM_SGM=$MOSES/scripts/ems/support/input-from-sgm.perl
+# adding this for the xnli_15 pretrained preprocessing
+LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # fastBPE
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
@@ -154,12 +154,12 @@ fi
 
 cd $MONO_PATH
 
-if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
-  echo "Downloading German monolingual data ..."
-  mkdir -p $MONO_PATH/de
-  cd $MONO_PATH/de
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
+# if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
+#   echo "Downloading German monolingual data ..."
+#   mkdir -p $MONO_PATH/de
+#   cd $MONO_PATH/de
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
+#   wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
@@ -169,7 +169,7 @@ if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
   # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
   # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
-fi
+# fi
 
 if [ "$SRC" == "en" -o "$TGT" == "en" ]; then
   echo "Downloading English monolingual data ..."
@@ -282,12 +282,16 @@ echo "$TGT monolingual data concatenated in: $TGT_RAW"
 if [ "$SRC" == "ro" ]; then
   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 else
-  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
+  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT "
+# else
+#   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 fi
 if [ "$TGT" == "ro" ]; then
   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
 else
-  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
+  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT"
+# else
+#   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
 fi
 
 # tokenize data
@@ -317,7 +321,9 @@ fi
 # learn BPE codes
 if [ ! -f "$BPE_CODES" ]; then
   echo "Learning BPE codes..."
-  $FASTBPE learnbpe $CODES $SRC_TOK $TGT_TOK > $BPE_CODES
+  exit
+  # putting this sanity check in, if it's learning BPE, I don't want it 
+  # $FASTBPE learnbpe $CODES $SRC_TOK $TGT_TOK > $BPE_CODES
 fi
 echo "BPE learned in $BPE_CODES"
 
