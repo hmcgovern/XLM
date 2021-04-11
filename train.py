@@ -166,6 +166,8 @@ def get_parser():
     # NOTE: my own!!
     parser.add_argument("--lambda_rat", type=str, default="1",
                         help="RAT coefficient")
+    parser.add_argument("--epsilon", type=float, default=None, 
+                        help="label smoothing epsilon for RAT loss")
     parser.add_argument("--lambda_xbt", type=str, default="1",
                         help="XBT coefficient")
     parser.add_argument("--lambda_rabt", type=str, default="1",

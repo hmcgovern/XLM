@@ -111,6 +111,7 @@ class PredLayer(nn.Module):
         self.n_words = params.n_words
         self.pad_index = params.pad_index
         dim = params.emb_dim
+        self.dim=dim
 
         if params.asm is False:
             self.proj = Linear(dim, params.n_words, bias=True)
@@ -123,7 +124,7 @@ class PredLayer(nn.Module):
                 head_bias=True,  # default is False
             )
 
-    def forward(self, x, y, get_scores=False):
+    def forward(self, x, y, get_scores=False, smoothing=None):
         """
         Compute the loss, and optionally the scores.
         """
@@ -132,6 +133,20 @@ class PredLayer(nn.Module):
         if self.asm is False:
             scores = self.proj(x).view(-1, self.n_words)
             loss = F.cross_entropy(scores, y, reduction='mean')
+            # print('SCORES SIZE', scores.size())
+            # print('PRE SMOOTHING LOSS', loss)
+            # adding label smoothing for RAT
+            # modified from https://github.com/pytorch/pytorch/issues/7455#issuecomment-513062631
+            # if smoothing != None:
+            #     confidence = 1.0-smoothing
+            #     classes = self.n_words
+            #     dim = self.dim
+            #     with torch.no_grad():
+            #         true_dist = torch.zeros_like(scores)
+            #         true_dist.fill_(smoothing/(classes-1))
+            #         true_dist.scatter_(1, y.data.unsqueeze(1), confidence)
+            #     loss = torch.mean(torch.sum(-true_dist * scores, dim=dim))
+            #     print('NEW LOSS', loss)
         else:
             _, loss = self.proj(x, y)
             scores = self.proj.log_prob(x) if get_scores else None
@@ -428,17 +443,18 @@ class TransformerModel(nn.Module):
 
         return tensor
 
-    def predict(self, tensor, pred_mask, y, get_scores):
+    def predict(self, tensor, pred_mask, y, get_scores, smoothing=None):
         """
         Given the last hidden state, compute word scores and/or the loss.
             `pred_mask` is a ByteTensor of shape (slen, bs), filled with 1 when
                 we need to predict a word
             `y` is a LongTensor of shape (pred_mask.sum(),)
             `get_scores` is a boolean specifying whether we need to return scores
+            `smoothing` is an epsilon value for label smoothing loss (only used in RAT)
         """
         # print('tensor is shaped', tensor.size())
         masked_tensor = tensor[pred_mask.unsqueeze(-1).expand_as(tensor)].view(-1, self.dim)
-        scores, loss = self.pred_layer(masked_tensor, y, get_scores)
+        scores, loss = self.pred_layer(masked_tensor, y, get_scores, smoothing)
         return scores, loss
 
     def generate(self, src_enc, src_len, tgt_lang_id, max_len=200, sample_temperature=None):

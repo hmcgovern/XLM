@@ -15,7 +15,8 @@ python ./train.py \
 --ae_steps 'en,fr,de' \
 --mt_steps 'en-fr' \
 --bt_steps '' \
---rat_steps '' \
+--rat_steps 'en-fr-de' \
+--epsilon 0.1 \
 --word_shuffle 3 \
 --word_dropout 0.1 \
 --word_blank 0.1 \
@@ -36,7 +37,7 @@ python ./train.py \
 --eval_bleu true \
 --stopping_criterion 'valid_en-de_mt_bleu,10' \
 --validation_metrics 'valid_en-de_mt_bleu' \
---debug_train false \
+--debug_train true \
 --use_lang_emb false \
 --max_vocab 95000 \
 # --amp 2 \
