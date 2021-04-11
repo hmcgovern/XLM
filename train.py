@@ -335,11 +335,12 @@ def main(params):
         
         # evaluate perplexity
         scores = evaluator.run_all_evals(trainer)
+        experiment.log_metrics(scores, epoch=trainer.epoch)
 
         # print / JSON log
         for k, v in scores.items():
             logger.info("%s -> %.6f" % (k, v))
-            # experiment.log_metric(str(k), v)
+            
         if params.is_master:
             logger.info("__log__:%s" % json.dumps(scores))
 
