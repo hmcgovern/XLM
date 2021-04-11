@@ -265,7 +265,7 @@ FASTBPE=$TOOLS_PATH/fastBPE/fast
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   for split in train valid test; do
     $FASTBPE applybpe $OUTPATH/para/$pair.$lg.$split $PARA_PATH/$pair.$lg.$split $OUTPATH/codes
-    python preprocess.py $OUTPATH/vocab.$pair $OUTPATH/para/$pair.$lg.$split
+    python preprocess.py $OUTPATH/vocab $OUTPATH/para/$pair.$lg.$split
   done
 done
 

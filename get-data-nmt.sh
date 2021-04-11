@@ -67,6 +67,9 @@ DATA_PATH=${NMT_DATA_DIR}
 MONO_PATH=$DATA_PATH/mono
 PARA_PATH=$DATA_PATH/para
 PROC_PATH=$DATA_PATH/processed/$SRC-$TGT
+#TODO: have two diff proc path, one for source, one for target
+PROC_PATH_SRC=$DATA_PATH/processed/$SRC
+PROC_PATH_TGT=$DATA_PATH/processed/$TGT
 
 # create paths
 mkdir -p $TOOLS_PATH
@@ -74,6 +77,8 @@ mkdir -p $DATA_PATH
 mkdir -p $MONO_PATH
 mkdir -p $PARA_PATH
 mkdir -p $PROC_PATH
+mkdir -p $PROC_PATH_SRC
+mkdir -p $PROC_PATH_TGT
 
 # moses
 MOSES=$TOOLS_PATH/mosesdecoder
@@ -104,15 +109,24 @@ TGT_TOK=$TGT_RAW.tok
 BPE_CODES=$PROC_PATH/codes
 SRC_VOCAB=$PROC_PATH/vocab.$SRC
 TGT_VOCAB=$PROC_PATH/vocab.$TGT
-FULL_VOCAB=$PROC_PATH/vocab.$SRC-$TGT
+FULL_VOCAB=$PROC_PATH/vocab
+# FULL_VOCAB=$PROC_PATH/vocab.$SRC-$TGT
+
+# # train / valid / test monolingual BPE data
+# SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
+# TGT_TRAIN_BPE=$PROC_PATH/train.$TGT
+# SRC_VALID_BPE=$PROC_PATH/valid.$SRC
+# TGT_VALID_BPE=$PROC_PATH/valid.$TGT
+# SRC_TEST_BPE=$PROC_PATH/test.$SRC
+# TGT_TEST_BPE=$PROC_PATH/test.$TGT
 
 # train / valid / test monolingual BPE data
-SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
-TGT_TRAIN_BPE=$PROC_PATH/train.$TGT
-SRC_VALID_BPE=$PROC_PATH/valid.$SRC
-TGT_VALID_BPE=$PROC_PATH/valid.$TGT
-SRC_TEST_BPE=$PROC_PATH/test.$SRC
-TGT_TEST_BPE=$PROC_PATH/test.$TGT
+SRC_TRAIN_BPE=$PROC_PATH_SRC/train.$SRC
+TGT_TRAIN_BPE=$PROC_PATH_TGT/train.$TGT
+SRC_VALID_BPE=$PROC_PATH_SRC/valid.$SRC
+TGT_VALID_BPE=$PROC_PATH_TGT/valid.$TGT
+SRC_TEST_BPE=$PROC_PATH_SRC/test.$SRC
+TGT_TEST_BPE=$PROC_PATH_TGT/test.$TGT
 
 # valid / test parallel BPE data
 PARA_SRC_VALID_BPE=$PROC_PATH/valid.$SRC-$TGT.$SRC
@@ -339,14 +353,14 @@ fi
 echo "BPE codes applied to $SRC in: $SRC_TRAIN_BPE"
 echo "BPE codes applied to $TGT in: $TGT_TRAIN_BPE"
 
-# extract source and target vocabulary
-if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" ]]; then
-  echo "Extracting vocabulary..."
-  $FASTBPE getvocab $SRC_TRAIN_BPE > $SRC_VOCAB
-  $FASTBPE getvocab $TGT_TRAIN_BPE > $TGT_VOCAB
-fi
-echo "$SRC vocab in: $SRC_VOCAB"
-echo "$TGT vocab in: $TGT_VOCAB"
+# # extract source and target vocabulary
+# if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" ]]; then
+#   echo "Extracting vocabulary..."
+#   $FASTBPE getvocab $SRC_TRAIN_BPE > $SRC_VOCAB
+#   $FASTBPE getvocab $TGT_TRAIN_BPE > $TGT_VOCAB
+# fi
+# echo "$SRC vocab in: $SRC_VOCAB"
+# echo "$TGT vocab in: $TGT_VOCAB"
 
 
 # reload full vocabulary
@@ -400,11 +414,18 @@ eval "$INPUT_FROM_SGM < $PARA_TGT_VALID.sgm | $TGT_PREPROCESSING > $PARA_TGT_VAL
 eval "$INPUT_FROM_SGM < $PARA_SRC_TEST.sgm  | $SRC_PREPROCESSING > $PARA_SRC_TEST"
 eval "$INPUT_FROM_SGM < $PARA_TGT_TEST.sgm  | $TGT_PREPROCESSING > $PARA_TGT_TEST"
 
+# echo "Applying BPE to valid and test files..."
+# $FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $SRC_VOCAB
+# $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $TGT_VOCAB
+# $FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $SRC_VOCAB
+# $FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $TGT_VOCAB
+
 echo "Applying BPE to valid and test files..."
-$FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $SRC_VOCAB
-$FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $TGT_VOCAB
-$FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $SRC_VOCAB
-$FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $TGT_VOCAB
+$FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $FULL_VOCAB
+$FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $FULL_VOCAB
+$FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $FULL_VOCAB
+$FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $FULL_VOCAB
+
 
 echo "Binarizing data..."
 rm -f $PARA_SRC_VALID_BPE.pth $PARA_TGT_VALID_BPE.pth $PARA_SRC_TEST_BPE.pth $PARA_TGT_TEST_BPE.pth

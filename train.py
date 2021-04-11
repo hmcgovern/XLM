@@ -229,13 +229,18 @@ def get_parser():
     parser.add_argument("--master_port", type=int, default=-1,
                         help="Master port (for multi-node SLURM jobs)")
 
+                    
+
     return parser
 
 
 def main(params):
     
     # start a comet project
-    experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
+    if params.debug_train:
+        experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
+    else:
+        experiment = Experiment(workspace="hopemcgovern", log_code=True)#, disabled=True)
     experiment.log_parameters(params)
     experiment.add_tag('XLM')
 
@@ -270,7 +275,7 @@ def main(params):
         scores = evaluator.run_all_evals(trainer)
         for k, v in scores.items():
             logger.info("%s -> %.6f" % (k, v))
-            experiment.log_metric(str(k), v)
+            # experiment.log_metric(str(k), v)
         logger.info("__log__:%s" % json.dumps(scores))
         
         exit()
@@ -321,8 +326,8 @@ def main(params):
             experiment.log_metric('n_iter', trainer.n_iter)
             experiment.log_metric('n_total_iterations', trainer.n_total_iter)
             experiment.log_metric('n_sentences', trainer.n_sentences)
-            for k, v in trainer.stats.items():
-                experiment.log_metric(str(k), v)
+            # for k, v in trainer.stats.items():
+            #     experiment.log_metric(str(k), v)
             trainer.iter()
 
         logger.info("============ End of epoch %i ============" % trainer.epoch)
@@ -334,7 +339,7 @@ def main(params):
         # print / JSON log
         for k, v in scores.items():
             logger.info("%s -> %.6f" % (k, v))
-            experiment.log_metric(str(k), v)
+            # experiment.log_metric(str(k), v)
         if params.is_master:
             logger.info("__log__:%s" % json.dumps(scores))
 
@@ -351,8 +356,7 @@ if __name__ == '__main__':
     parser = get_parser()
     params = parser.parse_args()
 
-    # print(params.para_dataset.keys())
-    # exit()
+
     # debug mode
     if params.debug:
         params.exp_name = 'debug'

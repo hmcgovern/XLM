@@ -134,6 +134,7 @@ class Evaluator(object):
         else:
             assert stream is False
             _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
+            # okay, let's think. If this is getting called on de-en, there is no train data, but there is valid and test. 
             iterator = self.data['para'][(_lang1, _lang2)][data_set].get_iterator(
                 shuffle=False,
                 group_by_size=True,
@@ -237,9 +238,14 @@ class Evaluator(object):
                         self.evaluate_mlm(scores, data_set, lang1, lang2)
 
                     # machine translation task (evaluate perplexity and accuracy)
-                    for lang1, lang2 in set(params.mt_steps + [(l2, l3) for _, l2, l3 in params.bt_steps]):
+                    for lang1, lang2 in set(params.mt_steps + [(l2, l3) for _, l2, l3 in params.bt_steps]): #(en-fr, en-de, de-en)
                         eval_bleu = params.eval_bleu and params.is_master
+                        print(lang1, lang2, data_set, eval_bleu)
                         self.evaluate_mt(scores, data_set, lang1, lang2, eval_bleu)
+                    
+                    # for lang1, lang2, lang3 in set(params.rat_steps):
+                    #     eval_bleu = params.eval_bleu and params.is_master
+                    #     self.evaluate_mt(scores, data_set)
 
                     # report average metrics per language
                     _clm_mono = [l1 for (l1, l2) in params.clm_steps if l2 is None]

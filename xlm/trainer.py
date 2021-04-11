@@ -126,7 +126,8 @@ class Trainer(object):
             [('PC-%s-%s' % (l1, l2), []) for l1, l2 in params.pc_steps] +
             [('AE-%s' % lang, []) for lang in params.ae_steps] +
             [('MT-%s-%s' % (l1, l2), []) for l1, l2 in params.mt_steps] +
-            [('BT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.bt_steps]
+            [('BT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.bt_steps] +
+            [('RAT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.rat_steps]
         )
         self.last_time = time.time()
 
@@ -869,6 +870,12 @@ class EncDecTrainer(Trainer):
         # loss
         _, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
         self.stats[('AE-%s' % lang1) if lang1 == lang2 else ('MT-%s-%s' % (lang1, lang2))].append(loss.item())
+        
+        # comet logging
+        if lang1 == lang2:
+            self.exp.log_metric('AE-%s' % lang1, loss.item(), step=self.n_iter, epoch=self.epoch)
+        else:
+            self.exp.log_metric('MT-%s-%s' % (lang1, lang2), loss.item(), step=self.n_iter, epoch=self.epoch)
         loss = lambda_coeff * loss
 
         # optimize
@@ -935,14 +942,14 @@ class EncDecTrainer(Trainer):
             del enc2
 
             # logging to comet
-            if self.n_iter % 100 == 0:
+            if self.n_total_iter % 100 == 0:
                 source = []
                 source.extend(convert_to_text(x1, len1, self.data['dico'], params))
                 ref = []
                 ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
                 voted = []
                 voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
-                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_iter, metadata={'category': 'rat_step'})
+                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rat_step'})
 
             
             self.encoder.train()
@@ -957,22 +964,36 @@ class EncDecTrainer(Trainer):
         enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=langs3, causal=False)
         enc3 = enc3.transpose(0,1)
         
-        # words to predict
-        alen = torch.arange(len3.max(), dtype=torch.long, device=len3.device)
-        pred_mask = alen[:, None] < len3[None] - 1  # do not predict anything given the last target word
-        y3 = x3[1:].masked_select(pred_mask[:-1])
+        
+        # source words to predict
+        alen = torch.arange(len1.max(), dtype=torch.long, device=len1.device)
+        pred_mask1 = alen[:, None] < len1[None] - 1  # do not predict anything given the last target word
+        y1 = x1[1:].masked_select(pred_mask1[:-1])
+        
+        # reference words to predict
+        alen = torch.arange(len2.max(), dtype=torch.long, device=len2.device)
+        pred_mask2 = alen[:, None] < len2[None] - 1  # do not predict anything given the last target word
+        y2 = x2[1:].masked_select(pred_mask2[:-1])
+        # print('rat pred mask', pred_mask2.size())
+        # print(y1.size())
 
-        # decode from source
+        # decode to source from agreed-upon
         dec1 = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc3, src_len=len3)
-        # decode from reference
+        # decode to reference from agreed-upon
         dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc3, src_len=len3)
+        # print('DEC1', dec1.size(), 'DEC2', dec2.size())
 
         # loss is the sum of loss of S-->T and R-->T
-        _, loss1 = self.decoder('predict', tensor=dec1, pred_mask=pred_mask, y=y3, get_scores=False)
-        _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y3, get_scores=False)
+        _, loss1 = self.decoder('predict', tensor=dec1, pred_mask=pred_mask1, y=y1, get_scores=False)
+        _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask2, y=y2, get_scores=False)
         
+        # loss
         loss = loss1.add(loss2)
         self.stats[('RAT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
+        
+        # commet logging
+        self.exp.log_metric('RAT-%s-%s-%s' % (lang1, lang2, lang3), loss.item(), step=self.n_iter, epoch=self.epoch)
+        
         loss = lambda_coeff * loss
 
         # optimize
@@ -1235,14 +1256,14 @@ class EncDecTrainer(Trainer):
             del enc1
             del enc2
 
-            if self.n_iter % 100 == 0:
+            if self.n_total_iter % 100 == 0:
                 source = []
                 source.extend(convert_to_text(x1, len1, self.data['dico'], params))
                 ref = []
                 ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
                 voted = []
                 voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
-                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_iter, metadata={'category': 'rat_step'})
+                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rat_step'})
 
             
             self._encoder.train()
@@ -1324,7 +1345,7 @@ class EncDecTrainer(Trainer):
             # NOTE: attempting to log the back-translation attempt just for viewing purposes
             # so i can monitor it over time 
             # every 100 training steps, take the first three sentences and compare them to the original and following
-            if self.n_iter % 100 == 0:
+            if self.n_total_iter % 100 == 0:
                 orig = []
                 orig.extend(convert_to_text(x1, len1, self.data['dico'], params))
                 # self.exp.log_text(orig[:3], step=self.n_iter, metadata={'category': 'bt_step', 'name': f'{lang1}-original', 'lang': lang1})
@@ -1347,22 +1368,27 @@ class EncDecTrainer(Trainer):
         alen = torch.arange(len1.max(), dtype=torch.long, device=len1.device)
         pred_mask = alen[:, None] < len1[None] - 1  # do not predict anything given the last target word
         y1 = x1[1:].masked_select(pred_mask[:-1])
-
+        # print('pred_mask',pred_mask.size())
+        # print(y1.size())
         # decode original sentence
         dec3 = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc2, src_len=len2)
-
-        if self.n_iter % 100 ==0:
+        # print('BT STEP:', dec3.size())
+        if self.n_total_iter % 100 ==0:
             # translate back and log
             x3, len3 = _decoder.generate(enc2, len2, lang1_id, max_len=int(1.3 * len2.max().item() + 5))
             bt2 = []
             bt2.extend(convert_to_text(x3, len3, self.data['dico'], params))
 
-            self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_iter, metadata={'category': 'bt_step'})
+            self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_total_iter, metadata={'category': 'bt_step'})
             # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
 
         # loss
         _, loss = self.decoder('predict', tensor=dec3, pred_mask=pred_mask, y=y1, get_scores=False)
         self.stats[('BT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
+
+        # comet logging
+        self.exp.log_metric('BT-%s-%s-%s' % (lang1, lang2, lang3), loss.item(), step=self.n_iter, epoch=self.epoch)
+        
         loss = lambda_coeff * loss
 
         # optimize
