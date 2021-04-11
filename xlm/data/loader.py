@@ -304,6 +304,16 @@ def check_data_params(params):
     assert len(params.rat_steps) == 0 or not params.encoder_only
     params.rat_src_langs = [(l1,l2) for l1, l2, _ in params.rat_steps]
 
+    # reference-agreement back-translation steps
+    params.rabt_steps = [tuple(s.split('-')) for s in params.rabt_steps.split(',') if len(s) > 0]
+    # assert all([len(x) == 3 for x in params.bt_steps])
+    # TODO: add assert that checks for parallel data between l1 and l2 and not l1&l3, l2&l3 
+    assert all([l1 in params.langs and l2 in params.langs and l3 in params.langs for l1, l2, l3 in params.bt_steps])
+    assert all([l1 != l2 and l1 != l3 for l1, l2, l3, _ in params.rabt_steps])
+    assert len(params.rabt_steps) == len(set(params.rabt_steps))
+    assert len(params.rabt_steps) == 0 or not params.encoder_only
+    params.rabt_src_langs = [(l1,l2) for l1, l2, _, _ in params.rabt_steps]
+
     # check monolingual datasets
     required_mono = set([l1 for l1, l2 in (params.mlm_steps + params.clm_steps) if l2 is None] + params.ae_steps + params.bt_src_langs + params.rat_src_langs)
     params.mono_dataset = {

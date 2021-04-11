@@ -277,7 +277,6 @@ def main(params):
         scores = evaluator.run_all_evals(trainer)
         for k, v in scores.items():
             logger.info("%s -> %.6f" % (k, v))
-            # experiment.log_metric(str(k), v)
         logger.info("__log__:%s" % json.dumps(scores))
         
         exit()
@@ -323,13 +322,19 @@ def main(params):
             # reference-agreement-translation steps
             for lang1, lang2, lang3 in shuf_order(params.rat_steps):
                 trainer.rat_step(lang1, lang2, lang3, params.lambda_rat)
+
+            # reference-agreement-back-translation steps
+            for lang1, lang2, lang3 in shuf_order(params.rabt_steps):
+                trainer.rabt_step(lang1, lang2, lang3, params.lambda_rabt)
+
+            # cross-lingual-back-translation steps
+            
             
             experiment.log_metric('epoch', trainer.epoch)
             experiment.log_metric('n_iter', trainer.n_iter)
             experiment.log_metric('n_total_iterations', trainer.n_total_iter)
             experiment.log_metric('n_sentences', trainer.n_sentences)
-            # for k, v in trainer.stats.items():
-            #     experiment.log_metric(str(k), v)
+
             trainer.iter()
 
         logger.info("============ End of epoch %i ============" % trainer.epoch)
