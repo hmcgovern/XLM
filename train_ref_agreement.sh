@@ -16,18 +16,18 @@ python ./train.py \
 --mt_steps 'en-fr' \
 --bt_steps 'en-de-en,de-en-de' \
 --rat_steps 'en-fr-de' \
---rabt_steps 'en-fr-de-en,en-fr-de-fr' \
+--rabt_steps 'en-fr-de,fr-en-de' \
 --xbt_steps 'en-de-fr,fr-de-en' \
 --epsilon 0.1 \
 --word_shuffle 3 \
 --word_dropout 0.1 \
 --word_blank 0.1 \
 --lambda_ae '0:1,100000:0.1,300000:0' \
---lambda_mt '0:1,100000:0.1,300000:0' \
---lambda_bt '0:1,100000:0.1,300000:0' \
---lambda_rat '0:1,100000:0.1,300000:0' \
---lambda_rabt '0:1,100000:0.1,300000:0' \
---lambda_xbt '0:1,100000:0.1,300000:0' \
+--lambda_mt '1' \
+--lambda_bt '0:0,500:0,2000:1' \
+--lambda_rat '0:0,500:0,2000:1' \
+--lambda_rabt '0:0,500:0,2000:1' \
+--lambda_xbt '0:0,500:0,2000:1' \
 --encoder_only false \
 --emb_dim 1024 \
 --n_layers 6 \
@@ -35,12 +35,12 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 500 \
+--tokens_per_batch 2000 \
 --batch_size 32 \
 --bptt 256 \
---max_len 100 \
+--max_len 200 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
---epoch_size 2000 \
+--epoch_size 20000 \
 --eval_bleu true \
 --stopping_criterion 'valid_en-de_mt_bleu,10' \
 --validation_metrics 'valid_en-de_mt_bleu' \
@@ -50,9 +50,3 @@ python ./train.py \
 # --amp 2 \
 # --accumulate_gradients 4 \
 # --fp16 true \
-
-# --bptt 256 \
-
-# --ae_steps 'en,fr,de' \
-# --mt_steps 'en-fr' \
-# --bt_steps 'en-fr-en,fr-en-fr' \

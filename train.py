@@ -324,11 +324,12 @@ def main(params):
                 trainer.rat_step(lang1, lang2, lang3, params.lambda_rat)
 
             # reference-agreement-back-translation steps
-            for lang1, lang2, lang3 in shuf_order(params.rabt_steps):
+            for lang1, lang2, lang3, in shuf_order(params.rabt_steps):
                 trainer.rabt_step(lang1, lang2, lang3, params.lambda_rabt)
 
             # cross-lingual-back-translation steps
-            
+            for lang1, lang2, lang3 in shuf_order(params.xbt_steps):
+                trainer.xbt_step(lang1, lang2, lang3, params.lambda_xbt)
             
             experiment.log_metric('epoch', trainer.epoch)
             experiment.log_metric('n_iter', trainer.n_iter)

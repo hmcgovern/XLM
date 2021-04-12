@@ -298,7 +298,7 @@ def check_data_params(params):
     params.rat_steps = [tuple(s.split('-')) for s in params.rat_steps.split(',') if len(s) > 0]
     # assert all([len(x) == 3 for x in params.bt_steps])
     # TODO: add assert that checks for parallel data between l1 and l2 and not l1&l3, l2&l3 
-    assert all([l1 in params.langs and l2 in params.langs and l3 in params.langs for l1, l2, l3 in params.bt_steps])
+    assert all([l1 in params.langs and l2 in params.langs and l3 in params.langs for l1, l2, l3 in params.rat_steps])
     assert all([l1 != l2 and l1 != l3 for l1, l2, l3 in params.rat_steps])
     assert len(params.rat_steps) == len(set(params.rat_steps))
     assert len(params.rat_steps) == 0 or not params.encoder_only
@@ -308,11 +308,21 @@ def check_data_params(params):
     params.rabt_steps = [tuple(s.split('-')) for s in params.rabt_steps.split(',') if len(s) > 0]
     # assert all([len(x) == 3 for x in params.bt_steps])
     # TODO: add assert that checks for parallel data between l1 and l2 and not l1&l3, l2&l3 
-    assert all([l1 in params.langs and l2 in params.langs and l3 in params.langs for l1, l2, l3 in params.bt_steps])
-    assert all([l1 != l2 and l1 != l3 for l1, l2, l3, _ in params.rabt_steps])
+    assert all([l1 in params.langs and l2 in params.langs and l3 in params.langs for l1, l2, l3 in params.rat_steps])
+    assert all([l1 != l2 and l1 != l3 for l1, l2, l3 in params.rabt_steps])
     assert len(params.rabt_steps) == len(set(params.rabt_steps))
     assert len(params.rabt_steps) == 0 or not params.encoder_only
-    params.rabt_src_langs = [(l1,l2) for l1, l2, _, _ in params.rabt_steps]
+    params.rabt_src_langs = [(l1,l2) for l1, l2, _ in params.rabt_steps]
+
+    # cross-back-translation steps
+    params.xbt_steps = [tuple(s.split('-')) for s in params.xbt_steps.split(',') if len(s) > 0]
+    assert all([len(x) == 3 for x in params.xbt_steps])
+    assert all([l1 in params.langs and l2 in params.langs and l3 in params.langs for l1, l2, l3 in params.xbt_steps])
+    assert all([l1 != l3 and l1 != l2 for l1, l2, l3 in params.xbt_steps])
+    assert len(params.xbt_steps) == len(set(params.xbt_steps))
+    assert len(params.xbt_steps) == 0 or not params.encoder_only
+    params.xbt_src_langs = [(l1,l3) for l1, _, l3 in params.xbt_steps]
+
 
     # check monolingual datasets
     required_mono = set([l1 for l1, l2 in (params.mlm_steps + params.clm_steps) if l2 is None] + params.ae_steps + params.bt_src_langs + params.rat_src_langs)
@@ -329,16 +339,16 @@ def check_data_params(params):
             if not os.path.isfile(p):
                 logger.error(f"{p} not found")
     assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
-    # print('PASSED MONO')
+
 
     
     # check parallel datasets
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps)
     required_para = required_para_train | set([(l2, l3) for _, l2, l3 in params.bt_steps])
-    # print(required_para)
-    # this line was screwing something up, no clear idea why
+
+    # this line was screwing something up, no idea why
     # required_para = required_para_train | set([(l1, l2) for l1, l2, _ in params.rat_steps])
-    # print(required_para)
+
     params.para_dataset = {
         (src, tgt): {
             splt: (os.path.join(params.data_path, '%s.%s-%s.%s.pth' % (splt, src, tgt, src)),
@@ -350,8 +360,7 @@ def check_data_params(params):
         } for src in params.langs for tgt in params.langs
         if src < tgt and ((src, tgt) in required_para or (tgt, src) in required_para)
     }
-    # print(params.para_dataset)
-    # exit()
+
     for paths in params.para_dataset.values():
         for p1, p2 in paths.values():
     

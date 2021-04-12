@@ -627,7 +627,7 @@ class TransformerModel(nn.Module):
             )
             assert tensor1.size() == (1, bs, self.dim), (cur_len, max_len, src_enc1.size(), tensor1.size(), (1, bs, self.dim))
             tensor1 = tensor1.data[-1, :, :].type_as(src_enc1)  # (bs, dim)
-            # print('rat TENSOR SIZE', tensor1.size())
+            
             scores1 = self.pred_layer.get_scores(tensor1)      # (bs, n_words)
 
             tensor2 = self.forward(
