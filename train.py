@@ -36,6 +36,8 @@ def get_parser():
                         help="Save the model periodically (0 to disable)")
     parser.add_argument("--exp_id", type=str, default="",
                         help="Experiment ID")
+    parser.add_argument("--log_int", type=int, default=100, 
+                        help="interval for comet logging")
 
     # float16 / AMP API
     parser.add_argument("--fp16", type=bool_flag, default=False,
@@ -230,9 +232,6 @@ def get_parser():
                         help="Multi-GPU - Local rank")
     parser.add_argument("--master_port", type=int, default=-1,
                         help="Master port (for multi-node SLURM jobs)")
-
-                    
-
     return parser
 
 
@@ -242,7 +241,9 @@ def main(params):
     if params.debug_train:
         experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
     else:
-        experiment = Experiment(workspace="hopemcgovern", log_code=True)#, disabled=True)
+        experiment = Experiment(workspace="hopemcgovern", log_code=True)
+    experiment.log_code(file_name='train_ref_agreement.sh')
+    # experiment.log_code(file_name='train.sh')
     experiment.log_parameters(params)
     experiment.add_tag('XLM')
 

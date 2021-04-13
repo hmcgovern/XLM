@@ -247,7 +247,7 @@ split_data() {
 
 
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
-  split_data $PARA_PATH/$pair.$lg.all $PARA_PATH/$pair.$lg.train $PARA_PATH/$pair.$lg.valid $PARA_PATH/$pair.$lg.test
+  split_data $PARA_PATH/$pair.$lg.all $PARA_PATH/train.$pair.$lg $PARA_PATH/valid.$pair.$lg $PARA_PATH/test.$pair.$lg
 done
 
 echo "has been successfully split!"

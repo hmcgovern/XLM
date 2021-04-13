@@ -156,6 +156,12 @@ if [ "$SRC" == "en" -a "$TGT" == "ro" ]; then
   PARA_SRC_TEST=$PARA_PATH/dev/newstest2016-roen-ref.en
   PARA_TGT_TEST=$PARA_PATH/dev/newstest2016-enro-ref.ro
 fi
+if [ "$SRC" == "en" -a "$TGT" == "zh" ]; then
+  PARA_SRC_VALID=$PARA_PATH/dev/newsdev2017-zhen-ref.en
+  PARA_TGT_VALID=$PARA_PATH/dev/newsdev2017-enzh-ref.zh
+  PARA_SRC_TEST=$PARA_PATH/dev/newstest2017-zhen-ref.en
+  PARA_TGT_TEST=$PARA_PATH/dev/newstest2017-enzh-ref.zh
+fi
 
 # install tools
 ./install-tools.sh

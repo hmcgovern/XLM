@@ -12,10 +12,10 @@ export COMET_PROJECT_NAME='low-resource-mt'
 
 # export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
 python ./train.py \
---exp_name unsupMT_ende \
+--exp_name unsupMT_en_de \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
---reload_model "mlm_ende_1024.pth,mlm_ende_1024.pth" \
---data_path ./data/processed/de-en/ \
+--reload_model "mlm_tlm_xnli15_1024.pth,mlm_tlm_xnli15_1024.pth" \
+--data_path "${NMT_DATA_DIR}/exp/en_fr_de/"  \
 --lgs 'de-en' \
 --ae_steps 'de,en' \
 --bt_steps 'de-en-de,en-de-en' \
@@ -33,15 +33,18 @@ python ./train.py \
 --tokens_per_batch 1000 \
 --batch_size 32 \
 --bptt 256 \
+--max_len 200 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
 --epoch_size 20000 \
 --eval_bleu true \
---stopping_criterion 'valid_en-de_mt_bleu,3' \
+--stopping_criterion 'valid_en-de_mt_bleu,10' \
 --validation_metrics 'valid_en-de_mt_bleu' \
---debug_slurm true \
---amp 1 \
---accumulate_gradients 4 \
---fp16 true 
+--debug_train false \
+--use_lang_emb false \
+--max_vocab 95000 \
+# --amp 1 \
+# --accumulate_gradients 4 \
+# --fp16 true 
 
 # --debug_train true 
 
