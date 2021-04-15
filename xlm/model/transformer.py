@@ -111,7 +111,7 @@ class PredLayer(nn.Module):
         self.n_words = params.n_words
         self.pad_index = params.pad_index
         dim = params.emb_dim
-        self.dim=dim
+        # self.dim=dim
 
         if params.asm is False:
             self.proj = Linear(dim, params.n_words, bias=True)
@@ -326,6 +326,19 @@ class TransformerModel(nn.Module):
                 self.ffns.append(TransformerFFN(self.dim, self.hidden_dim, self.dim, dropout=self.dropout, gelu_activation=params.gelu_activation))
             self.layer_norm2.append(nn.LayerNorm(self.dim, eps=1e-12))
 
+        self.use_adapters = params.use_adapters
+        if params.use_adapters:
+            self.adapters_1 = nn.ModuleList()
+            self.adapters_2 = nn.ModuleList()
+
+            for _ in range(self.n_layers):
+
+                self.adapters_1.append(nn.Sequential(nn.Linear(self.dim, params.adapter_size),
+                                                     nn.ReLU(),
+                                                     nn.Linear(params.adapter_size, self.dim)))
+                self.adapters_2.append(nn.Sequential(nn.Linear(self.dim, params.adapter_size),
+                                                     nn.ReLU(),                                                  
+                                                     nn.Linear(params.adapter_size, self.dim)))
         # output layer
         if self.with_output:
             self.pred_layer = PredLayer(params)
@@ -344,7 +357,8 @@ class TransformerModel(nn.Module):
         else:
             raise Exception("Unknown mode: %s" % mode)
 
-    def fwd(self, x, lengths, causal, src_enc=None, src_len=None, positions=None, langs=None, cache=None):
+    def fwd(self, x, lengths, causal, src_enc=None, src_len=None, positions=None, langs=None, cache=None, 
+            encoder_only=False, extra_adapters_flag=False):
         """
         Inputs:
             `x` LongTensor(slen, bs), containing word indices
@@ -397,7 +411,9 @@ class TransformerModel(nn.Module):
 
         # embeddings
         tensor = self.embeddings(x)
-        tensor = tensor + self.position_embeddings(positions).expand_as(tensor)
+        position_embeddings = self.position_embeddings(positions).expand_as(tensor)
+        tensor = tensor + position_embeddings
+        # tensor = tensor + self.position_embeddings(positions).expand_as(tensor)
         if langs is not None and self.use_lang_emb:
             tensor = tensor + self.lang_embeddings(langs)
         tensor = self.layer_norm_emb(tensor)
@@ -410,6 +426,13 @@ class TransformerModel(nn.Module):
             # self attention
             attn = self.attentions[i](tensor, attn_mask, cache=cache)
             attn = F.dropout(attn, p=self.dropout, training=self.training)
+            if encoder_only: # mlm
+                if self.use_adapters:
+                    attn = self.adapters_1[i](attn) + attn
+            else: # nmt
+                if extra_adapters_flag and self.use_adapters:
+                    attn = self.adapters_1[i](attn) + attn
+
             tensor = tensor + attn
             tensor = self.layer_norm1[i](tensor)
 
@@ -421,10 +444,26 @@ class TransformerModel(nn.Module):
                 tensor = self.layer_norm15[i](tensor)
 
             # FFN
-            if ('%i_in' % i) in self.memories:
-                tensor = tensor + self.memories['%i_in' % i](tensor)
-            else:
-                tensor = tensor + self.ffns[i](tensor)
+            # NOTE: unclear how to adapt relm_unmt here bc that repo doesn't include memories, 
+            # going with what I think is right
+            if encoder_only: #mlm
+                if self.use_adapters:
+                    tensorX = self.ffns[i](tensor)
+                    tensorX = self.adapters_2[i](tensorX) + tensorX
+                    tensor = tensorX + tensor
+                else:
+                    # NOTE: this is the original code block
+                    if ('%i_in' % i) in self.memories:
+                        tensor = tensor + self.memories['%i_in' % i](tensor)
+                    else:
+                        tensor = tensor + self.ffns[i](tensor)
+            else: # nmt
+                if extra_adapters_flag and self.use_adapters:
+                    tensorX = self.ffns[i](tensor)
+                    tensorX = self.adapters_2[i](tensorX) + tensorX
+                    tensor = tensorX + tensor
+                else:
+                    tensor = tensor + self.ffns[i](tensor)
             tensor = self.layer_norm2[i](tensor)
 
             # memory
@@ -441,9 +480,9 @@ class TransformerModel(nn.Module):
         # move back sequence length to dimension 0
         tensor = tensor.transpose(0, 1)
 
-        return tensor
+        return tensor, langs
 
-    def predict(self, tensor, pred_mask, y, get_scores, smoothing=None):
+    def predict(self, tensor, pred_mask, y, get_scores, langs=None, smoothing=None):
         """
         Given the last hidden state, compute word scores and/or the loss.
             `pred_mask` is a ByteTensor of shape (slen, bs), filled with 1 when
@@ -454,10 +493,17 @@ class TransformerModel(nn.Module):
         """
         # print('tensor is shaped', tensor.size())
         masked_tensor = tensor[pred_mask.unsqueeze(-1).expand_as(tensor)].view(-1, self.dim)
+        
+        dom_loss = torch.Tensor([0])[0]
         scores, loss = self.pred_layer(masked_tensor, y, get_scores, smoothing)
-        return scores, loss
+        if langs is not None:
+            lang_id = langs[0][0]
+        else:
+            lang_id = None
+        return scores, loss, dom_loss, lang_id
 
-    def generate(self, src_enc, src_len, tgt_lang_id, max_len=200, sample_temperature=None):
+    def generate(self, src_enc, src_len, tgt_lang_id, max_len=200, sample_temperature=None,
+                extra_adapters_flag=False):
         """
         Decode a sentence given initial start.
         `x`:
@@ -489,7 +535,7 @@ class TransformerModel(nn.Module):
         positions = torch.arange(max_len, out=positions).unsqueeze(1).expand(max_len, bs)
 
         # language IDs
-        # print('TGT LANG ID', tgt_lang_id)
+    
         langs = src_len.new(max_len).long().fill_(tgt_lang_id)
         langs = langs.unsqueeze(1).expand(max_len, bs)
 
@@ -500,11 +546,15 @@ class TransformerModel(nn.Module):
 
         # cache compute states
         cache = {'slen': 0}
+        if extra_adapters_flag and self.use_adapters:
+            allow_adapters = True
+        else:
+            allow_adapters = False
 
         while cur_len < max_len:
 
             # compute word scores
-            tensor = self.forward(
+            tensor, _ = self.forward(
                 'fwd',
                 x=generated[:cur_len],
                 lengths=gen_len,
@@ -513,13 +563,13 @@ class TransformerModel(nn.Module):
                 causal=True,
                 src_enc=src_enc,
                 src_len=src_len,
-                cache=cache
+                cache=cache,
+                extra_adapters_flag=allow_adapters
             )
             assert tensor.size() == (1, bs, self.dim), (cur_len, max_len, src_enc.size(), tensor.size(), (1, bs, self.dim))
             tensor = tensor.data[-1, :, :].type_as(src_enc)  # (bs, dim)
-            # print('TENSOR SIZE', tensor.size())
             scores = self.pred_layer.get_scores(tensor)      # (bs, n_words)
-            # print('SCORES SIZE', scores.size()) # okay, scores is size [x, max_vocab_len]
+
             # select next words: sample or greedy
             if sample_temperature is None:
                 next_words = torch.topk(scores, 1)[1].squeeze(1)
@@ -546,7 +596,8 @@ class TransformerModel(nn.Module):
 
         return generated[:cur_len], gen_len
 
-    def generate_from_votes(self, src_enc1, src_enc2, src_len1, src_len2, tgt_lang_id, max_len=200, sample_temperature=None):
+    def generate_from_votes(self, src_enc1, src_enc2, src_len1, src_len2, tgt_lang_id, max_len=200, sample_temperature=None,
+                            extra_adapters_flag=False):
         """
         Decode a sentence given initial start from multiple source encodings.
         `x`:
@@ -608,13 +659,18 @@ class TransformerModel(nn.Module):
         cache1 = {'slen': 0}
         cache2 = {'slen': 0}
 
+        if extra_adapters_flag and self.use_adapters:
+            allow_adapters = True
+        else:
+            allow_adapters = False
+
         # generation is done at the word level
         while cur_len < max_len:
             # until you've reached the maximum length, consider all the previous words and predict
             # the next one
 
             # compute word scores
-            tensor1 = self.forward(
+            tensor1, _ = self.forward(
                 'fwd',
                 x=generated[:cur_len],
                 lengths=gen_len,
@@ -623,14 +679,15 @@ class TransformerModel(nn.Module):
                 causal=True,
                 src_enc=src_enc1,
                 src_len=src_len1,
-                cache=cache1
+                cache=cache1,
+                extra_adapters_flag=allow_adapters
             )
             assert tensor1.size() == (1, bs, self.dim), (cur_len, max_len, src_enc1.size(), tensor1.size(), (1, bs, self.dim))
             tensor1 = tensor1.data[-1, :, :].type_as(src_enc1)  # (bs, dim)
             
             scores1 = self.pred_layer.get_scores(tensor1)      # (bs, n_words)
 
-            tensor2 = self.forward(
+            tensor2, _ = self.forward(
                 'fwd',
                 x=generated[:cur_len],
                 lengths=gen_len,
@@ -639,7 +696,8 @@ class TransformerModel(nn.Module):
                 causal=True,
                 src_enc=src_enc2,
                 src_len=src_len2,
-                cache=cache2
+                cache=cache2,
+                extra_adapters_flag=allow_adapters
             )
             assert tensor2.size() == (1, bs, self.dim), (cur_len, max_len, src_enc2.size(), tensor2.size(), (1, bs, self.dim))
             tensor2 = tensor2.data[-1, :, :].type_as(src_enc2)  # (bs, dim)
@@ -685,7 +743,7 @@ class TransformerModel(nn.Module):
 
         return generated[:cur_len], gen_len
 
-    def generate_beam(self, src_enc, src_len, tgt_lang_id, beam_size, length_penalty, early_stopping, max_len=200):
+    def generate_beam(self, src_enc, src_len, tgt_lang_id, beam_size, length_penalty, early_stopping, max_len=200, extra_adapters_flag=False):
         """
         Decode a sentence given initial start.
         `x`:
@@ -740,14 +798,17 @@ class TransformerModel(nn.Module):
 
         # cache compute states
         cache = {'slen': 0}
-
+        if extra_adapters_flag and self.use_adapters:
+            allow_adapters = True
+        else:
+            allow_adapters = False
         # done sentences
         done = [False for _ in range(bs)]
 
         while cur_len < max_len:
 
             # compute word scores
-            tensor = self.forward(
+            tensor, _ = self.forward(
                 'fwd',
                 x=generated[:cur_len],
                 lengths=src_len.new(bs * beam_size).fill_(cur_len),
@@ -756,7 +817,8 @@ class TransformerModel(nn.Module):
                 causal=True,
                 src_enc=src_enc,
                 src_len=src_len,
-                cache=cache
+                cache=cache,
+                extra_adapters_flag=allow_adapters
             )
             assert tensor.size() == (1, bs * beam_size, self.dim)
             tensor = tensor.data[-1, :, :]               # (bs * beam_size, dim)

@@ -164,7 +164,7 @@ def build_model(params, dico):
             #             logger.warning("Parameter %s not found. Ignoring ..." % k)
             #             reloaded[k] = model.state_dict()[k]
 
-            model.load_state_dict(reloaded)
+            model.load_state_dict(reloaded, strict=False)
 
         logger.info("Model: {}".format(model))
         logger.info("Number of parameters (model): %i" % sum([p.numel() for p in model.parameters() if p.requires_grad]))
@@ -195,6 +195,18 @@ def build_model(params, dico):
                 enc_reload = enc_reload['model' if 'model' in enc_reload else 'encoder']
                 if all([k.startswith('module.') for k in enc_reload.keys()]):
                     enc_reload = {k[len('module.'):]: v for k, v in enc_reload.items()}
+                if not params.use_lang_emb:
+                    del enc_reload["lang_embeddings.weight"]
+                else:
+                    enc_reload['lang_embeddings.weight'] = encoder.state_dict()['lang_embeddings.weight']
+
+                if params.increase_vocab_by > 0:
+                    logger.info('Fine-tuning model with a different vocabulary. Increasing loaded embeddings size ...')
+                    for param_name in ['embeddings.weight', 'pred_layer.proj.weight', 'pred_layer.proj.bias']:
+                        enc_reload[param_name] = modify_params(enc_reload[param_name], params.increase_vocab_by,
+                                                               param_name)
+
+                # encoder.load_state_dict(enc_reload, strict=False)
                 encoder.load_state_dict(enc_reload, strict=False) #NOTE: strict arg was added by me
 
             # reload decoder
@@ -209,6 +221,18 @@ def build_model(params, dico):
                         if name % i not in dec_reload:
                             logger.warning("Parameter %s not found." % (name % i))
                             dec_reload[name % i] = decoder.state_dict()[name % i]
+                if not params.use_lang_emb:
+                    if not params.de_finetune:
+                        del dec_reload["lang_embeddings.weight"]
+                else:
+                    dec_reload['lang_embeddings.weight'] = decoder.state_dict()['lang_embeddings.weight']
+
+                if params.increase_vocab_by > 0:
+                    logger.info('Fine-tuning model with a different vocabulary. Increasing loaded embeddings size ...')
+                    for param_name in ['embeddings.weight', 'pred_layer.proj.weight', 'pred_layer.proj.bias']:
+                        dec_reload[param_name] = modify_params(dec_reload[param_name], params.increase_vocab_by,
+                                                               param_name)
+                                                               
                 decoder.load_state_dict(dec_reload, strict=False) #NOTE: strict arg was added by me
 
         logger.debug("Encoder: {}".format(encoder))

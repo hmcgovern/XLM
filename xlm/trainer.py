@@ -442,12 +442,15 @@ class Trainer(object):
         # define target words to predict
         if params.sample_alpha == 0:
             pred_mask = np.random.rand(slen, bs) <= params.word_pred
-            pred_mask = torch.from_numpy(pred_mask.astype(np.uint8))
+            # pred_mask = torch.from_numpy(pred_mask.astype(np.uint8))
+            pred_mask = torch.from_numpy(pred_mask.astype(np.bool))
+
         else:
             x_prob = params.mask_scores[x.flatten()]
             n_tgt = math.ceil(params.word_pred * slen * bs)
             tgt_ids = np.random.choice(len(x_prob), n_tgt, replace=False, p=x_prob / x_prob.sum())
-            pred_mask = torch.zeros(slen * bs, dtype=torch.uint8)
+           # pred_mask = torch.zeros(slen * bs, dtype=torch.uint8)
+            pred_mask = torch.zeros(slen *bs, dtype=torch.bool) 
             pred_mask[tgt_ids] = 1
             pred_mask = pred_mask.view(slen, bs)
 
@@ -705,7 +708,7 @@ class Trainer(object):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += lengths.size(0)
         self.stats['processed_w'] += pred_mask.sum().item()
-        # return loss
+      
 
     def mlm_step(self, lang1, lang2, lambda_coeff):
         """
@@ -729,8 +732,8 @@ class Trainer(object):
         x, y, pred_mask, lengths, positions, langs = to_cuda(x, y, pred_mask, lengths, positions, langs)
 
         # forward / loss
-        tensor = model('fwd', x=x, lengths=lengths, positions=positions, langs=langs, causal=False)
-        _, loss = model('predict', tensor=tensor, pred_mask=pred_mask, y=y, get_scores=False)
+        tensor, langs = model('fwd', x=x, lengths=lengths, positions=positions, langs=langs, causal=False)
+        _, loss, dom_loss, lang_id = model('predict', tensor=tensor, pred_mask=pred_mask, y=y, get_scores=False, langs=langs)
         self.stats[('MLM-%s' % lang1) if lang2 is None else ('MLM-%s-%s' % (lang1, lang2))].append(loss.item())
         loss = lambda_coeff * loss
 
@@ -741,7 +744,6 @@ class Trainer(object):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += lengths.size(0)
         self.stats['processed_w'] += pred_mask.sum().item()
-        # return loss
 
     def pc_step(self, lang1, lang2, lambda_coeff):
         """
@@ -797,7 +799,6 @@ class Trainer(object):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += bs
         self.stats['processed_w'] += lengths.sum().item()
-        # return loss
 
 class SingleTrainer(Trainer):
 
@@ -864,14 +865,17 @@ class EncDecTrainer(Trainer):
         x1, len1, langs1, x2, len2, langs2, y = to_cuda(x1, len1, langs1, x2, len2, langs2, y)
 
         # encode source sentence
-        enc1 = self.encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+        enc1, _ = self.encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False, 
+                                encoder_only=False, extra_adapters_flag=True)
         enc1 = enc1.transpose(0, 1)
 
         # decode target sentence
-        dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc1, src_len=len1)
+        dec2, _ = self.decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, 
+                                src_enc=enc1, src_len=len1, 
+                                encoder_only=False, extra_adapters_flag=True)
 
         # loss
-        _, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
+        _, loss, _, _ = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
         self.stats[('AE-%s' % lang1) if lang1 == lang2 else ('MT-%s-%s' % (lang1, lang2))].append(loss.item())
         
         # comet logging
@@ -930,14 +934,17 @@ class EncDecTrainer(Trainer):
             self.decoder.eval()
             
             # encode source and reference sentences (parallel to each other)
-            enc1 = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1, _ = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False, 
+                            extra_adapters_flag=True)
             enc1 = enc1.transpose(0, 1)
 
-            enc2 = _encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+            enc2, _ = _encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False, 
+                            extra_adapters_flag=True)
             enc2 = enc2.transpose(0,1)
 
             # translate them to target using votes from the two encodings
-            x3, len3 = _decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5))
+            x3, len3 = _decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5), 
+                            extra_adapters_flag=True)
             langs3 = x3.clone().fill_(lang3_id)
             
             # free CUDA memory
@@ -972,14 +979,16 @@ class EncDecTrainer(Trainer):
         y3 = x3[1:].masked_select(pred_mask[:-1])
 
         # decode TO agreed-upon FROM source
-        dec1 = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc1, src_len=len1)
+        dec1, _ = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc1, src_len=len1
+                                encoder_only=False, extra_adapters_flag=True)
         # decode TO agreed-upon FROM reference 
-        dec2 = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc2, src_len=len2)
+        dec2, _ = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc2, src_len=len2,
+                                encoder_only=False, extra_adapters_flag=True)
         # print('DEC1', dec1.size(), 'DEC2', dec2.size())
 
         # loss is the sum of loss of S-->T and R-->T
-        _, loss1 = self.decoder('predict', tensor=dec1, pred_mask=pred_mask, y=y3, get_scores=False)#, smoothing=params.epsilon)
-        _, loss2 = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y3, get_scores=False)#, smoothing=params.epsilon)
+        _, loss1, _, _ = self.decoder('predict', tensor=dec1, pred_mask=pred_mask, y=y3, get_scores=False)#, smoothing=params.epsilon)
+        _, loss2, _, _ = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y3, get_scores=False)#, smoothing=params.epsilon)
         
         # loss
         loss = loss1.add(loss2)
@@ -1043,14 +1052,17 @@ class EncDecTrainer(Trainer):
             self.decoder.eval()
             
             # encode source and reference sentences (parallel to each other)
-            enc1 = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1, _ = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False,
+                            extra_adapters_flag=True)
             enc1 = enc1.transpose(0, 1)
 
-            enc2 = _encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+            enc2, _ = _encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False, 
+                            extra_adapters_flag=True)
             enc2 = enc2.transpose(0,1)
 
             # translate them to target using votes from the two encodings
-            x3, len3 = _decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5))
+            x3, len3 = _decoder.generate_from_votes(enc1, enc2, len1, len2, lang3_id, max_len=int(1.3 * len1.max().item() + 5),
+                            extra_adapters_flag=True)
             langs3 = x3.clone().fill_(lang3_id)
             
             # free CUDA memory
@@ -1075,7 +1087,8 @@ class EncDecTrainer(Trainer):
         # x3, len3, langs3= to_cuda(x3, len3, langs3)
         
         # encode generated agreed-upon translation
-        enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=langs3, causal=False)
+        enc3, _ = self.encoder('fwd', x=x3, lengths=len3, langs=langs3, causal=False,
+                                encoder_only=False, extra_adapters_flag=True)
         enc3 = enc3.transpose(0,1)
         
         
@@ -1087,11 +1100,12 @@ class EncDecTrainer(Trainer):
         y = x1[1:].masked_select(pred_mask[:-1])
 
         # decode TO src/ref FROM agreed-upon
-        dec = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc3, src_len=len3)
+        dec, _ = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc3, src_len=len3,
+                encoder_only=False, extra_adapters_flag=True)
 
         
         # loss
-        _, loss = self.decoder('predict', tensor=dec, pred_mask=pred_mask, y=y, get_scores=False)
+        _, loss, _, _ = self.decoder('predict', tensor=dec, pred_mask=pred_mask, y=y, get_scores=False)
 
         # loss
 
@@ -1154,12 +1168,14 @@ class EncDecTrainer(Trainer):
             self.decoder.eval()
             
             # encode lang1 sentence
-            enc1 = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1, _ = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False, 
+                            extra_adapters_flag=True)
             enc1 = enc1.transpose(0, 1)
 
 
             # translate it to target lang (lang2) 
-            x2, len2 = _decoder.generate(enc1, len1, lang2_id, max_len=int(1.3 * len1.max().item() + 5))
+            x2, len2 = _decoder.generate(enc1, len1, lang2_id, max_len=int(1.3 * len1.max().item() + 5),
+                                            extra_adapters_flag=True)
             langs2 = x2.clone().fill_(lang2_id)
             
             # free CUDA memory
@@ -1181,7 +1197,8 @@ class EncDecTrainer(Trainer):
         
 
         # encode the generated lang2 sentence
-        enc2 = self.encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+        enc2, _ = self.encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False,
+                                encoder_only=False, extra_adapters_flag=True)
         enc2 = enc2.transpose(0,1)
 
         # NOTE: the words to predict here are from lang 3!
@@ -1192,10 +1209,11 @@ class EncDecTrainer(Trainer):
 
         
         # decode to lang3 from generated lang2
-        dec = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc2, src_len=len2)
+        dec, _ = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc2, src_len=len2,
+                                encoder_only=False, extra_adapters_flag=True)
 
         # loss is predicted lang3 sent compared to gt lang3
-        _, loss = self.decoder('predict', tensor=dec, pred_mask=pred_mask, y=y, get_scores=False)
+        _, loss, _, _ = self.decoder('predict', tensor=dec, pred_mask=pred_mask, y=y, get_scores=False)
     
         
         self.stats[('XBT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
@@ -1245,9 +1263,11 @@ class EncDecTrainer(Trainer):
             self.decoder.eval()
 
             # encode source sentence and translate it
-            enc1 = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1, _ = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False, encoder_only=False, 
+                            extra_adapters_flag=True)
             enc1 = enc1.transpose(0, 1)
-            x2, len2 = _decoder.generate(enc1, len1, lang2_id, max_len=int(1.3 * len1.max().item() + 5))
+            x2, len2 = _decoder.generate(enc1, len1, lang2_id, max_len=int(1.3 * len1.max().item() + 5),
+                                        extra_adapters_flag=True)
             langs2 = x2.clone().fill_(lang2_id)
             # print('LANGS2', langs2)
             
@@ -1270,17 +1290,19 @@ class EncDecTrainer(Trainer):
             self.decoder.train()
 
         # encode generated sentence
-        enc2 = self.encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False)
+        enc2, _ = self.encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False,
+                                encoder_only=False, extra_adapters_flag=True)
         enc2 = enc2.transpose(0, 1)
 
         # words to predict
         alen = torch.arange(len1.max(), dtype=torch.long, device=len1.device)
         pred_mask = alen[:, None] < len1[None] - 1  # do not predict anything given the last target word
         y1 = x1[1:].masked_select(pred_mask[:-1])
-        # print('pred_mask',pred_mask.size())
-        # print(y1.size())
+
         # decode original sentence
-        dec3 = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc2, src_len=len2)
+        dec3, _ = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, 
+                                src_enc=enc2, src_len=len2, encoder_only=False, 
+                                extra_adapters_flag=True)
         # print('BT STEP:', dec3.size())
         # if self.n_total_iter % params.log_int ==0:
         #     # translate back and log
@@ -1292,7 +1314,7 @@ class EncDecTrainer(Trainer):
         #     # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
 
         # loss
-        _, loss = self.decoder('predict', tensor=dec3, pred_mask=pred_mask, y=y1, get_scores=False)
+        _, loss, _, _ = self.decoder('predict', tensor=dec3, pred_mask=pred_mask, y=y1, get_scores=False)
         self.stats[('BT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
 
         # comet logging
@@ -1307,4 +1329,4 @@ class EncDecTrainer(Trainer):
         self.n_sentences += params.batch_size
         self.stats['processed_s'] += len1.size(0)
         self.stats['processed_w'] += (len1 - 1).sum().item()
-        # return loss# TODO: return loss so you can log it in train.py, same for all these steps
+        

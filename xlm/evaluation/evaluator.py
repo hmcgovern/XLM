@@ -204,7 +204,7 @@ class Evaluator(object):
             if not np.any(to_predict[:lengths[i] - 1, i]):
                 v = rng.randint(1, lengths[i] - 1)
                 to_predict[v, i] = 1
-        pred_mask = torch.from_numpy(to_predict.astype(np.uint8))
+        pred_mask = torch.from_numpy(to_predict.astype(np.bool))
 
         # generate possible targets / update x input
         _x_real = x[pred_mask]
@@ -243,10 +243,9 @@ class Evaluator(object):
                         # print(lang1, lang2, data_set, eval_bleu)
                         self.evaluate_mt(scores, data_set, lang1, lang2, eval_bleu)
                     
-                    # for lang1, lang2, lang3 in set(params.rat_steps):
-                    #     eval_bleu = params.eval_bleu and params.is_master
-                    #     self.evaluate_mt(scores, data_set)
-
+                    # prediction task (evaluate perplexity and accuracy)
+                    for lang1, lang2 in params.mlm_eval_steps:
+                        self.evaluate_mlm(scores, data_set, lang1, lang2)
                     # report average metrics per language
                     _clm_mono = [l1 for (l1, l2) in params.clm_steps if l2 is None]
                     if len(_clm_mono) > 0:
@@ -255,6 +254,7 @@ class Evaluator(object):
                     _mlm_mono = [l1 for (l1, l2) in params.mlm_steps if l2 is None]
                     if len(_mlm_mono) > 0:
                         scores['%s_mlm_ppl' % data_set] = np.mean([scores['%s_%s_mlm_ppl' % (data_set, lang)] for lang in _mlm_mono])
+                        scores['%s_mlm_loss' % data_set] = np.mean([scores['%s_%s_mlm_loss' % (data_set, lang)] for lang in _mlm_mono])
                         scores['%s_mlm_acc' % data_set] = np.mean([scores['%s_%s_mlm_acc' % (data_set, lang)] for lang in _mlm_mono])
 
         return scores
@@ -379,8 +379,9 @@ class Evaluator(object):
             x, y, pred_mask, lengths, positions, langs = to_cuda(x, y, pred_mask, lengths, positions, langs)
 
             # forward / loss
-            tensor = model('fwd', x=x, lengths=lengths, positions=positions, langs=langs, causal=False)
-            word_scores, loss = model('predict', tensor=tensor, pred_mask=pred_mask, y=y, get_scores=True)
+            tensor, langs = model('fwd', x=x, lengths=lengths, positions=positions, langs=langs, causal=False)
+            word_scores, loss, dom_loss, lang_id = model('predict', tensor=tensor, pred_mask=pred_mask, y=y, get_scores=True,
+                                        langs=langs)
 
             # update stats
             n_words += len(y)
@@ -392,8 +393,10 @@ class Evaluator(object):
 
         # compute perplexity and prediction accuracy
         ppl_name = '%s_%s_mlm_ppl' % (data_set, l1l2)
+        loss_name = '%s_%s_mlm_loss' % (data_set, l1l2)
         acc_name = '%s_%s_mlm_acc' % (data_set, l1l2)
         scores[ppl_name] = np.exp(xe_loss / n_words) if n_words > 0 else 1e9
+        scores[loss_name] = xe_loss / n_words if n_words > 0 else 0
         scores[acc_name] = 100. * n_valid / n_words if n_words > 0 else 0.
 
         # compute memory usage
@@ -471,15 +474,15 @@ class EncDecEvaluator(Evaluator):
             x1, len1, langs1, x2, len2, langs2, y = to_cuda(x1, len1, langs1, x2, len2, langs2, y)
 
             # encode source sentence
-            enc1 = encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1, _ = encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
             enc1 = enc1.transpose(0, 1)
             enc1 = enc1.half() if params.fp16 else enc1
 
             # decode target sentence
-            dec2 = decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc1, src_len=len1)
+            dec2, _ = decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc1, src_len=len1)
 
             # loss
-            word_scores, loss = decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=True)
+            word_scores, loss, _, _ = decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=True)
 
             # update stats
             n_words += y.size(0)
