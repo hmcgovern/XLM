@@ -103,6 +103,33 @@ def set_pretrain_emb(model, dico, word2id, embeddings):
                 % (n_found, len(dico), 100. * n_found / len(dico)))
 
 
+def modify_params(initial, num_new_dim, param_name):
+    num_new_dim = int(num_new_dim)
+    if len(initial.size()) == 2:
+        # modified = torch.FloatTensor(initial.size(0) + num_new_dim, initial.size(1))
+
+        if param_name == 'embeddings.weight':
+            modified = torch.normal(mean=0, std=initial.size(1) ** -0.5,
+                                    size=(initial.size(0) + num_new_dim, initial.size(1)))
+        elif param_name == "pred_layer.proj.weight":
+            # modified = torch.normal(0, 1, size=(initial.size(0) + num_new_dim, initial.size(1)))
+            modified = torch.FloatTensor(initial.size(0) + num_new_dim, initial.size(1)).uniform_(-1. / initial.size(1),
+                                                                                                  1. / initial.size(1))
+            # modified = torch.normal(0, 1, size=(initial.size(0) + num_new_dim, initial.size(1)))
+        if num_new_dim < 0:
+            modified = initial[:modified.size(0), :]
+        else:
+            modified[:initial.size(0), :] = initial
+    else:
+        # modified = torch.FloatTensor(initial.size(0) + num_new_dim)
+        modified = torch.zeros(initial.size(0) + num_new_dim)
+        if num_new_dim < 0:
+            modified = initial[:modified.size(0)]
+        else:
+            modified[:initial.size(0)] = initial
+    return modified
+
+
 def build_model(params, dico):
     """
     Build model.
@@ -122,6 +149,12 @@ def build_model(params, dico):
             reloaded = torch.load(params.reload_model, map_location=lambda storage, loc: storage.cuda(params.local_rank))['model']
             if all([k.startswith('module.') for k in reloaded.keys()]):
                 reloaded = {k[len('module.'):]: v for k, v in reloaded.items()}
+
+            if params.increase_vocab_by != 0:
+                logger.info('Fine-tuning model with a different vocabulary. Increasing loaded embeddings size ...')
+                for param_name in ['embeddings.weight', 'pred_layer.proj.weight', 'pred_layer.proj.bias']:
+                    reloaded[param_name] = modify_params(reloaded[param_name], params.increase_vocab_by, param_name)
+
 
             # # HACK to reload models with less layers
             # for i in range(12, 24):

@@ -163,6 +163,14 @@ if [ "$SRC" == "en" -a "$TGT" == "zh" ]; then
   PARA_TGT_TEST=$PARA_PATH/dev/newstest2017-enzh-ref.zh
 fi
 
+if [ "$SRC" == "en" -a "$TGT" == "ru" ]; then
+  PARA_SRC_VALID=$PARA_PATH/dev/newsdev2017-zhen-ref.en
+  PARA_TGT_VALID=$PARA_PATH/dev/newsdev2017-enzh-ref.zh
+  PARA_SRC_TEST=$PARA_PATH/dev/newstest2017-zhen-ref.en
+  PARA_TGT_TEST=$PARA_PATH/dev/newstest2017-enzh-ref.zh
+fi
+
+
 # install tools
 ./install-tools.sh
 # ${MAIN_PATH}/install-tools.sh
@@ -246,6 +254,17 @@ if [ "$SRC" == "zh" -o "$TGT" == "zh" ]; then
 
 fi
 
+if [ "$SRC" == "hsb" -o "$TGT" == "hsb" ]; then
+  echo "Downloading Upper Sorbian monolingual data ..."
+  mkdir -p $MONO_PATH/hsb
+  cd $MONO_PATH/hsb
+
+  # get all the WMT data
+  wget -c http://www.statmt.org/sorbian_institute_monolingual.hsb.gz
+  wget -c http://www.statmt.org/witaj_monolingual.hsb.gz
+
+fi
+
 
 if [ "$SRC" == "ro" -o "$TGT" == "ro" ]; then
   echo "Downloading Romanian monolingual data ..."
@@ -277,7 +296,6 @@ for FILENAME in $SRC/news* $TGT/news*; do
     echo "$OUTPUT already decompressed."
   fi
 done
-
 
 # ###################################################################################################
 
@@ -405,8 +423,12 @@ cd $PARA_PATH
 echo "Downloading parallel data..."
 wget -c http://data.statmt.org/wmt18/translation-task/dev.tgz
 
+echo "Downloading de-hsb parallel data..."
+wget -c http://www.statmt.org/devtest.tar.gz
+
 echo "Extracting parallel data..."
 tar -xzf dev.tgz
+tar -xzvf devtest.tar.gz
 
 # check valid and test files are here
 if ! [[ -f "$PARA_SRC_VALID.sgm" ]]; then echo "$PARA_SRC_VALID.sgm is not found!"; exit; fi

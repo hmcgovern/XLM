@@ -111,6 +111,15 @@ def load_mono_data(params, data):
     data['mono'] = {}
     data['mono_stream'] = {}
 
+    if (params.increase_vocab_for_lang is None and params.increase_vocab_from_lang is not None) or \
+        (params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is None):
+        raise Exception("Cannot set one without the other - --increase_vocab_for_lang and --increase_vocab_from_lang")
+
+    global_dico = None
+    if params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is not None:
+        # load the dictionary from the specified language, for efficiency use it from the valid set (they should be the same for train and test)
+        global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
+
     for lang in params.mono_dataset.keys():
         
         logger.info('============ Monolingual data (%s)' % lang)
@@ -128,8 +137,10 @@ def load_mono_data(params, data):
             # load data / update dictionary parameters / update data
             mono_data = load_binarized(params.mono_dataset[lang][splt], params)
             
-            # print('dico' in data)
-            set_dico_parameters(params, data, mono_data['dico'])
+            dico = global_dico if global_dico is not None and lang == params.increase_vocab_for_lang else mono_data['dico']
+            set_dico_parameters(params, data, dico)
+            # # print('dico' in data)
+            # set_dico_parameters(params, data, mono_data['dico'])
         
 
             # create stream dataset
@@ -174,9 +185,20 @@ def load_para_data(params, data):
     """
     data['para'] = {}
 
-    required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps) #+ params.rat_steps) #+ params.rabt_steps + params.xbt_steps)
-
+    # print(params.rat_steps)
+    required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps+ params.rabt_src_langs) #+ params.rat_steps) #+ params.rabt_steps + params.xbt_steps)
     # print('REQUIRED PARA TRAIN', required_para_train)
+
+    if (params.increase_vocab_for_lang is None and params.increase_vocab_from_lang is not None) or \
+            (params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is None):
+        raise Exception("Cannot set one without the other - --increase_vocab_for_lang and --increase_vocab_from_lang")
+
+    global_dico = None
+    if params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is not None:
+        # load the dictionary from the specified language, for efficiency use it from the valid set (they should be the same for train and test)
+        global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
+
+    
     for src, tgt in params.para_dataset.keys():
 
         logger.info('============ Parallel data (%s-%s)' % (src, tgt))
@@ -196,17 +218,18 @@ def load_para_data(params, data):
 
             # load binarized datasets
             src_path, tgt_path = params.para_dataset[(src, tgt)][splt]
-            # print('SRC PATH', src_path)
-            # print('TGT PATH', tgt_path)
+
             src_data = load_binarized(src_path, params)
             tgt_data = load_binarized(tgt_path, params)
 
+        
             # update dictionary parameters
-            # print(src, tgt)
-            # print(len(src_data['dico']))
-            # print(len(data['dico']))
-            set_dico_parameters(params, data, src_data['dico'])
-            set_dico_parameters(params, data, tgt_data['dico'])
+            src_dico = global_dico if global_dico is not None and src == params.increase_vocab_for_lang else src_data['dico']
+            tgt_dico = global_dico if global_dico is not None and tgt == params.increase_vocab_for_lang else tgt_data['dico']
+            # set_dico_parameters(params, data, src_data['dico'])
+            set_dico_parameters(params, data, src_dico)
+            # set_dico_parameters(params, data, tgt_data['dico'])
+            set_dico_parameters(params, data, tgt_dico)
 
             # create ParallelDataset
             dataset = ParallelDataset(
@@ -343,9 +366,10 @@ def check_data_params(params):
 
     
     # check parallel datasets
-    required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps)
+    required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps+ params.rabt_src_langs)
     required_para = required_para_train | set([(l2, l3) for _, l2, l3 in params.bt_steps])
-
+    # print(required_para)
+    # exit()
     # this line was screwing something up, no idea why
     # required_para = required_para_train | set([(l1, l2) for l1, l2, _ in params.rat_steps])
 

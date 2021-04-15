@@ -101,6 +101,10 @@ en-de: mlm_ende_1024.pth codes_ende vocab_ende
 en-ro: mlm_enro_1024.pth codes_enro vocab_enro
 	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
 
+de-hsb: 
+	@bash get-data-de-hsb.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab vocab_xnli_15
+	@bash get_data_and_preprocess.sh --src de --tgt hsb
+
 # NOTE: these can be condensed with rules, will be useful when there's a lot of them
 mlm_enro_1024.pth:
 	wget -c https://dl.fbaipublicfiles.com/XLM/mlm_enro_1024.pth

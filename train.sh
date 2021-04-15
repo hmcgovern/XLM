@@ -9,7 +9,7 @@ export COMET_PROJECT_NAME='low-resource-mt'
 # export CUDA_VISIBLE_DEVICES=0,1
 # this is for multi GPU training:
 # 
-
+export PATH=/home/hem52/.conda/envs/nmt/bin:$PATH
 # export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
 python ./train.py \
 --exp_name unsupMT_en_de \
@@ -42,9 +42,9 @@ python ./train.py \
 --debug_train false \
 --use_lang_emb false \
 --max_vocab 95000 \
-# --amp 1 \
-# --accumulate_gradients 4 \
-# --fp16 true 
+--amp 1 \
+--accumulate_gradients 4 \
+--fp16 true 
 
 # --debug_train true 
 

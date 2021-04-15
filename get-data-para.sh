@@ -225,9 +225,9 @@ fi
 # tokenize
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
-    cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
+    # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
     # removing bc the model i'm using only tokenizes, doesn't remove accents and lowercase
-    # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
+    cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
   fi
 done
 

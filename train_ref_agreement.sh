@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
-
+#!/usr/bin/env bash 
 export COMET_MODE=ONLINE
 export COMET_API_KEY="ZVTkXN5kScnbV6H4uBBZ97Qyv"
 export COMET_PROJECT_NAME='low-resource-mt'
 
+export PATH=/home/hem52/.conda/envs/nmt/bin:$PATH
 
 ref=fr
 
@@ -13,13 +13,9 @@ python ./train.py \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
 --reload_model "mlm_tlm_xnli15_1024.pth,mlm_tlm_xnli15_1024.pth" \
 --data_path "${NMT_DATA_DIR}/exp/en_${ref}_de/" \
---lgs "en-${ref}-de" \
+--lgs "ar-bg-de-el-en-es-fr-hi-ru-sw-th-tr-ur-vi-zh" \
 --ae_steps "en,${ref},de" \
---mt_steps "en-${ref}" \
 --bt_steps "en-de-en,de-en-de" \
---rat_steps "en-${ref}-de" \
---rabt_steps "en-${ref}-de,${ref}-en-de" \
---xbt_steps "en-de-${ref},${ref}-de-en" \
 --log_int 20 \
 --epsilon 0.1 \
 --word_shuffle 3 \
@@ -33,7 +29,7 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 1000 \
+--tokens_per_batch 2000 \
 --batch_size 32 \
 --bptt 256 \
 --max_len 200 \
@@ -43,11 +39,17 @@ python ./train.py \
 --stopping_criterion 'valid_en-de_mt_bleu,10' \
 --validation_metrics 'valid_en-de_mt_bleu' \
 --debug_train false \
---use_lang_emb false \
+--use_lang_emb true \
 --max_vocab 95000 \
-# --amp 2 \
+--amp 1 \
+--fp16 true \
+--reload_checkpoint 
+
+# --rabt_steps "en-${ref}-de,${ref}-en-de" \
+# --xbt_steps "en-de-${ref},${ref}-de-en" \
 # --accumulate_gradients 4 \
-# --fp16 true \
+# --mt_steps "en-${ref}" \
+# --rat_steps "en-${ref}-de" \
 # --lambda_bt '0:0,500:0,2000:1' \
 # --lambda_rat '0:0,500:0,2000:1' \
 # --lambda_rabt '0:0,500:0,2000:1' \

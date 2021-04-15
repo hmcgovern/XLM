@@ -38,6 +38,13 @@ def get_parser():
                         help="Experiment ID")
     parser.add_argument("--log_int", type=int, default=100, 
                         help="interval for comet logging")
+    
+    parser.add_argument("--use_pretrained_lang_emb", action="store_true",
+                        help="Use the language embeddings of the pretrained MLM")
+    parser.add_argument("--save_all_checkpoints", action="store_true",
+                        help="Save all checkpoints")
+    parser.add_argument("--mlm_eval_steps", type=str, default="",
+                        help="Language we evaluate MLM on")
 
     # float16 / AMP API
     parser.add_argument("--fp16", type=bool_flag, default=False,
@@ -232,6 +239,16 @@ def get_parser():
                         help="Multi-GPU - Local rank")
     parser.add_argument("--master_port", type=int, default=-1,
                         help="Master port (for multi-node SLURM jobs)")
+
+    parser.add_argument("--increase_vocab_by", type=int, default=0,
+                        help="Increase the embeddings dimension (num words) by manually "
+                             "specifying the difference from the previous vocabulary")
+
+    parser.add_argument("--increase_vocab_for_lang", type=str, default=None)
+    parser.add_argument("--increase_vocab_from_lang", type=str, default=None)
+
+    parser.add_argument('--use_adapters', type=bool_flag, default=False)
+    parser.add_argument('--adapter_size', type=int, default=0)
     return parser
 
 
@@ -262,6 +279,24 @@ def main(params):
     # build model
     if params.encoder_only:
         model = build_model(params, data['dico'])
+        if params.use_adapters:
+            logger.info("Using adapters")
+            for param in model.named_parameters():
+
+                if param[0][:8] != "adapters":
+                    param[1].requires_grad = False
+
+            for param_name, param in model.embeddings.named_parameters():
+                param.requires_grad = True
+            for param_name, param in model.position_embeddings.named_parameters():
+                param.requires_grad = True
+            for param_name, param in model.pred_layer.named_parameters():
+                param.requires_grad = True
+            for param in model.layer_norm_emb.parameters():
+                param.requires_grad = True
+            for param in model.named_parameters():
+                logger.info(param[0] + ' required grad = ' + str(param[1].requires_grad))
+
     else:
         encoder, decoder = build_model(params, data['dico'])
 
