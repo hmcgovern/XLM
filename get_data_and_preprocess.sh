@@ -41,10 +41,10 @@ if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit
 # Initialize tools and data paths
 
 # main paths
-MAIN_PATH=$PWD
-TOOLS_PATH=$PWD/tools
-DATA_PATH=$NMT_DATA_DIR/exp/de_hsb
-PROC_PATH=$NMT_DATA_DIR/exp/de_hsb
+MAIN_PATH=$XLM_REPO_DIR
+TOOLS_PATH=$XLM_REPO_DIR/tools
+DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
+PROC_PATH=$NMT_DATA_DIR/exp/$TGT-$SRC # this is where we put the hsb data and hsb-de parallel eval data
 # DATA_PATH=./data/$SRC
 # PROC_PATH=./data/$TGT-$SRC
 
@@ -71,8 +71,9 @@ REMOVE_DIACRITICS=$WMT16_SCRIPTS/preprocess/remove-diacritics.py
 
 SRC_TRAIN=$DATA_PATH/train_raw.$SRC
 SRC_TRAIN_TOK=$SRC_TRAIN.tok
-SRC_TRAIN_BPE=$DATA_PATH/train.$SRC
+SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
 
+# NOTE: might need to change the PROC_PATH to DATA_PATH here
 SRC_VALID=$PROC_PATH/valid_raw.$SRC
 SRC_VALID_TOK=$SRC_VALID.tok
 SRC_VALID_BPE=$PROC_PATH/valid.$SRC
@@ -96,10 +97,11 @@ TGT_TEST_BPE=$PROC_PATH/test.$TGT
 
 # BPE / vocab files
 BPE_JOINT_CODES=$PROC_PATH/codes.$TGT-$SRC
-BPE_CODES_HMR=$PROC_PATH/codes
-# BPE_CODES_HMR=$DATA_PATH/codes.$SRC
-# SRC_VOCAB=$DATA_PATH/vocab.$SRC
-SRC_VOCAB=$PROC_PATH/vocab.$SRC
+# BPE_CODES_HMR=$PROC_PATH/codes
+BPE_CODES_HMR=$DATA_PATH/codes # not lang spec bc it's 15 way
+SRC_VOCAB=$DATA_PATH/vocab.$SRC
+# SRC_VOCAB=$DATA_PATH/vocab
+# SRC_VOCAB=$PROC_PATH/vocab.$SRC
 TGT_VOCAB=$PROC_PATH/vocab.$TGT
 
 # valid / test parallel BPE data
@@ -156,7 +158,7 @@ echo "$TGT vocab in: $TGT_VOCAB"
 
 # compute full vocabulary
 echo "Extracting vocabulary..."
-LANGSVOCAB=$(python3 $MAIN_PATH/add_vocabs.py $SRC $TGT)
+LANGSVOCAB=$(python3 $MAIN_PATH/add_vocabs.py $SRC $TGT $DATA_PATH/ $PROC_PATH/)
 VOCAB=$(echo $LANGSVOCAB | cut -d " " -f 3)
 
 

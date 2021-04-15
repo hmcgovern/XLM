@@ -979,7 +979,7 @@ class EncDecTrainer(Trainer):
         y3 = x3[1:].masked_select(pred_mask[:-1])
 
         # decode TO agreed-upon FROM source
-        dec1, _ = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc1, src_len=len1
+        dec1, _ = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc1, src_len=len1,
                                 encoder_only=False, extra_adapters_flag=True)
         # decode TO agreed-upon FROM reference 
         dec2, _ = self.decoder('fwd', x=x3, lengths=len3, langs=langs3, causal=True, src_enc=enc2, src_len=len2,

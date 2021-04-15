@@ -3,7 +3,7 @@ python train.py                             \
 --debug_train true                          \
 --dump_path $NMT_EXP_DIR/dumped/            \
 --reload_model 'mlm_tlm_xnli15_1024.pth'    \
---data_path $NMT_DATA_DIR/exp/de_hsb        \
+--data_path $NMT_DATA_DIR/exp/hsb-de        \
 --lgs 'de-hsb'                              \
 --mlm_steps 'de,hsb'                        \
 --emb_dim 1024                              \
@@ -21,4 +21,4 @@ python train.py                             \
 --increase_vocab_for_lang de                \
 --increase_vocab_from_lang hsb              \
 --use_adapters true                         \
---increase_vocab_by 2394 #(see ./data/mk-en/vocab.mk-en-ext-by-$NUMBER)
+--increase_vocab_by 72021 #(see ./data/mk-en/vocab.mk-en-ext-by-$NUMBER)

@@ -7,7 +7,6 @@ set -e
 N_MONO=500000  # number of monolingual sentences for German
 # this really should be used, just use existing codes file
 N_THREADS=16    # number of threads in data preprocessing
-CODES=80000
 
 
 #

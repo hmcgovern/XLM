@@ -1,17 +1,19 @@
 # from https://raw.githubusercontent.com/alexandra-chron/relm_unmt/master/add_vocabs.py
 import sys
-import os
+
 if __name__ == '__main__':
     hmr_lang = sys.argv[1]
     lmr_lang = sys.argv[2]
+    mono_path = sys.argv[3]
+    proc_path = sys.argv[4]
 
-    print(hmr_lang, lmr_lang)
-    # mono_path = './data/{}/'.format(hmr_lang)
+    # print(hmr_lang, lmr_lang)
+    # mono_path = '$NMT_DATA_DIR/{}/'.format(hmr_lang)
     # proc_path = './data/{}-{}/'.format(lmr_lang, hmr_lang)
-    NMT_DATA_DIR = os.environ["NMT_DATA_DIR"]
+    # NMT_DATA_DIR = os.environ["NMT_DATA_DIR"]
 
-    mono_path = NMT_DATA_DIR+"/exp/{}_{}/".format(hmr_lang,lmr_lang)
-    proc_path = NMT_DATA_DIR+"/exp/{}_{}/".format(hmr_lang,lmr_lang)
+    # mono_path = NMT_DATA_DIR+"/exp/{}_{}/".format(hmr_lang,lmr_lang)
+    # proc_path = NMT_DATA_DIR+"/exp/{}_{}/".format(hmr_lang,lmr_lang)
 
     lmr = []
     hmr_vocab = []
