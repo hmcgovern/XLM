@@ -101,9 +101,12 @@ en-de: mlm_ende_1024.pth codes_ende vocab_ende
 en-ro: mlm_enro_1024.pth codes_enro vocab_enro
 	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
 
-de-hsb: 
+de-hsb-finetune: 
 	@bash get-data-xnli-mt.sh de 
 	@bash get_data_and_preprocess.sh --src de --tgt hsb
+
+de-hsb-nmt:
+	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-72021
 
 # NOTE: these can be condensed with rules, will be useful when there's a lot of them
 mlm_enro_1024.pth:

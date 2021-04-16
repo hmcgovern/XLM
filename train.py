@@ -256,10 +256,10 @@ def main(params):
     
     # start a comet project
     if params.debug_train:
-        experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
+        experiment = Experiment(workspace="hopemcgovern", log_code=True)#, disabled=True)
     else:
         experiment = Experiment(workspace="hopemcgovern", log_code=True)
-    experiment.log_code(file_name='train_ref_agreement.sh')
+    experiment.set_name(params.exp_name)
     # experiment.log_code(file_name='train.sh')
     experiment.log_parameters(params)
     experiment.add_tag('XLM')
@@ -302,7 +302,7 @@ def main(params):
 
     # build trainer, reload potential checkpoints / build evaluator
     if params.encoder_only:
-        trainer = SingleTrainer(model, data, params)
+        trainer = SingleTrainer(model, data, params, experiment)
         evaluator = SingleEvaluator(trainer, data, params)
     else:
         trainer = EncDecTrainer(encoder, decoder, data, params, experiment)

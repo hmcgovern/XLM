@@ -10,7 +10,7 @@ import os
 import torch
 
 from .pretrain import load_embeddings
-from .transformer import DECODER_ONLY_PARAMS, TransformerModel  # , TRANSFORMER_LAYER_PARAMS
+from .transformer import DECODER_ONLY_PARAMS, TransformerModel  , TRANSFORMER_LAYER_PARAMS
 from .memory import HashingMemory
 
 
@@ -137,7 +137,7 @@ def build_model(params, dico):
     if params.encoder_only:
         # build
         model = TransformerModel(params, dico, is_encoder=True, with_output=True)
-
+        
         # reload pretrained word embeddings
         if params.reload_emb != '':
             word2id, embeddings = load_embeddings(params.reload_emb, params)
@@ -153,8 +153,10 @@ def build_model(params, dico):
             if params.increase_vocab_by != 0:
                 logger.info('Fine-tuning model with a different vocabulary. Increasing loaded embeddings size ...')
                 for param_name in ['embeddings.weight', 'pred_layer.proj.weight', 'pred_layer.proj.bias']:
+                    # print(param_name, reloaded[param_name].size())
                     reloaded[param_name] = modify_params(reloaded[param_name], params.increase_vocab_by, param_name)
-
+                    # print('new', param_name, reloaded[param_name].size())
+                
 
             # # HACK to reload models with less layers
             # for i in range(12, 24):
@@ -174,7 +176,7 @@ def build_model(params, dico):
     else:
         # build
         # NOTE: modified from True to False with_output
-        encoder = TransformerModel(params, dico, is_encoder=True, with_output=False)  # TODO: only output when necessary - len(params.clm_steps + params.mlm_steps) > 0
+        encoder = TransformerModel(params, dico, is_encoder=True, with_output=True)  # TODO: only output when necessary - len(params.clm_steps + params.mlm_steps) > 0
         decoder = TransformerModel(params, dico, is_encoder=False, with_output=True)
 
         # reload pretrained word embeddings

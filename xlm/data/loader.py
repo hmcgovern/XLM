@@ -197,6 +197,8 @@ def load_para_data(params, data):
     if params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is not None:
         # load the dictionary from the specified language, for efficiency use it from the valid set (they should be the same for train and test)
         global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
+    # print(len(global_dico))
+    # exit()
 
     
     for src, tgt in params.para_dataset.keys():
@@ -355,7 +357,7 @@ def check_data_params(params):
             for splt in ['train', 'valid', 'test']
         } for lang in params.langs if lang in required_mono
     }
-    # print(params.mono_dataset)
+    
     for paths in params.mono_dataset.values():
         for p in paths.values():
             # print(p)
@@ -368,8 +370,7 @@ def check_data_params(params):
     # check parallel datasets
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps+ params.rabt_src_langs)
     required_para = required_para_train | set([(l2, l3) for _, l2, l3 in params.bt_steps])
-    # print(required_para)
-    # exit()
+
     # this line was screwing something up, no idea why
     # required_para = required_para_train | set([(l1, l2) for l1, l2, _ in params.rat_steps])
 

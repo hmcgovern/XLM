@@ -802,7 +802,7 @@ class Trainer(object):
 
 class SingleTrainer(Trainer):
 
-    def __init__(self, model, data, params):
+    def __init__(self, model, data, params, exp):
 
         self.MODEL_NAMES = ['model']
 
@@ -810,6 +810,7 @@ class SingleTrainer(Trainer):
         self.model = model
         self.data = data
         self.params = params
+        self.exp = exp
 
         super().__init__(data, params)
 

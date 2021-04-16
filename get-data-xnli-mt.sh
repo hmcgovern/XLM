@@ -42,12 +42,14 @@ if [ ! -d $OUTPATH/XNLI-15way ]; then
   unzip $OUTPATH/XNLI-15way.zip -d $OUTPATH
 fi
 # we've got a .tsv we need to separate into indivual languages, split--> $split_raw, tokenize --> #split_raw.tok, and binarize --> $split.$lg 
+DEV_OUT=$NMT_DATA_DIR/exp/hsb-$lg
+mkdir -p $DEV_OUT
 
 
 # training things
 SRC_TRAIN=$PROC_PATH/train_raw.$lg
 SRC_TRAIN_TOK=$SRC_TRAIN.tok
-SRC_TRAIN_BPE=$PROC_PATH/train.$lg
+SRC_TRAIN_BPE=$DEV_OUT/train.$lg
 
 echo "*** Extracting $lg data from the tsv file ***"
 # since I don't know the column number, I can't use awk easily. Installing a specialized package called csvkit to help
@@ -56,25 +58,6 @@ if [ ! -f $SRC_TRAIN ]; then
     csvcut -t -c $lg $XNLI_PATH/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $SRC_TRAIN
 fi
 
-
-# split into train / valid / test
-# removed a zero from every number bc it's only 10k set total
-split_data() {
-    get_seeded_random() {
-        seed="$1"; openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt </dev/zero 2>/dev/null
-    };
-    NLINES=`wc -l $1  | awk -F " " '{print $1}'`;
-
-    NTRAIN=$((NLINES - 1000));
-    NVAL=$((NTRAIN + 500));
-    shuf --random-source=<(get_seeded_random 42) $1 | head -$NTRAIN             > $2;
-    shuf --random-source=<(get_seeded_random 42) $1 | head -$NVAL | tail -500  > $3;
-    shuf --random-source=<(get_seeded_random 42) $1 | tail -500                > $4;
-}
-
-
-# echo "*** Splitting $lg data into train, valid, and test ***"
-# split_data $XNLI_PATH/$lg.all $PROC_PATH/train_raw.$lg $PROC_PATH/valid_raw.$lg $PROC_PATH/test_raw.$lg
 
 # fastBPE
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
@@ -104,15 +87,13 @@ cp $CODES $PROC_PATH/codes
 cp $VOCAB $PROC_PATH/vocab.$lg
 
 ############# hsb train data NOT PROCESSED, JUST DOWNLOADED ###########
-DEV_OUT=$NMT_DATA_DIR/exp/hsb-$lg
-mkdir -p $DEV_OUT
+
 
 cd $DEV_OUT
 
 # training things
 TGT_TRAIN=$DEV_OUT/train_raw.hsb
-# TGT_TRAIN_TOK=$TGT_TRAIN.tok
-# TGT_TRAIN_BPE=$DEV_OUT/train.$lg
+
 
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_monolingual.hsb.gz
 
