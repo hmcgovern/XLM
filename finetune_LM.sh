@@ -5,15 +5,15 @@ export COMET_PROJECT_NAME='finetune-de-hsb'
 
 export PATH=/home/hem52/.conda/envs/nmt/bin:$PATH
 
-
-# export NGPU=2; python -m torch.distributed.launch --nproc_per_node=$NGPU train.py \
-python ./train.py \
+# python ./train.py \
+export NGPU=4; python -m torch.distributed.launch --nproc_per_node=$NGPU train.py \
 --exp_name finetune_de_hsb_mlm              \
 --debug_train false                          \
+--debug_slurm true                          \
 --dump_path $NMT_EXP_DIR/dumped/            \
 --reload_model 'mlm_tlm_xnli15_1024.pth'    \
---data_path $NMT_DATA_DIR/exp/hsb-de        \
---lgs 'de-hsb'                              \
+--data_path $NMT_DATA_DIR/exp/hsb-de-16k        \
+--lgs "ar-bg-de-el-en-es-fr-hi-ru-sw-th-tr-ur-vi-zh-hsb" \
 --mlm_steps 'de,hsb'                        \
 --emb_dim 1024                              \
 --n_layers 6                                \
@@ -26,13 +26,15 @@ python ./train.py \
 --optimizer adam,lr=0.0001                  \
 --epoch_size 50000                          \
 --validation_metrics valid_hsb_mlm_ppl      \
---stopping_criterion valid_hsb_mlm_ppl,3   \
+--stopping_criterion valid_hsb_mlm_ppl,10   \
 --increase_vocab_for_lang de                \
 --increase_vocab_from_lang hsb              \
---use_adapters true                         \
---max_vocab 167021                          \
+--use_adapters false                         \
+--max_vocab 108812                          \
 --use_lang_emb false                        \
---adapter_size 256                          \
---increase_vocab_by 72021 #(see ./data/mk-en/vocab.mk-en-ext-by-$NUMBER)
-# had to get max_vocab to 95000 + increase amount (72021)
+--adapter_size 0                          \
+--increase_vocab_by 13812 #(see ./data/mk-en/vocab.mk-en-ext-by-$NUMBER)
+# had to get max_vocab to 95000 + increase amount (28311)
+# would like to automate this. 
 # --epoch_size 50000                          \
+# --lgs 'de-hsb'                              \

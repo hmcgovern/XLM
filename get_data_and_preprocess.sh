@@ -1,5 +1,6 @@
-# from https://raw.githubusercontent.com/alexandra-chron/relm_unmt/master/get_data_and_preprocess.sh
 #!/usr/bin/env bash
+# from https://raw.githubusercontent.com/alexandra-chron/relm_unmt/master/get_data_and_preprocess.sh
+
 # Copyright (c) 2019-present, Facebook, Inc.
 # All rights reserved.
 #
@@ -10,8 +11,7 @@ set -e
 
 # Data preprocessing configuration
 
-# CODES=32000     # number of BPE codes
-CODES=80000
+# CODES=16000     # number of BPE codes
 N_THREADS=16    # number of threads in data preprocessing
 
 # Read arguments
@@ -25,6 +25,8 @@ case $key in
     SRC="$2"; shift 2;;
   --tgt)
     TGT="$2"; shift 2;;
+  --bpe)
+    CODES="$2"; shift 2;;
   *)
   POSITIONAL+=("$1")
   shift
@@ -44,7 +46,10 @@ if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit
 MAIN_PATH=$XLM_REPO_DIR
 TOOLS_PATH=$XLM_REPO_DIR/tools
 DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
-PROC_PATH=$NMT_DATA_DIR/exp/$TGT-$SRC # this is where we put the hsb data and hsb-de parallel eval data
+# get the first two numbers of CODES and use it to decorate the processed path
+let EXT=$CODES/1000
+PROC_PATH=$NMT_DATA_DIR/exp/$TGT-$SRC-"${EXT}k" # this is where we put the hsb data and hsb-de parallel eval data
+
 # DATA_PATH=./data/$SRC
 # PROC_PATH=./data/$TGT-$SRC
 
@@ -158,7 +163,7 @@ echo "$TGT vocab in: $TGT_VOCAB"
 
 # compute full vocabulary
 echo "Extracting vocabulary..."
-LANGSVOCAB=$(python3 $MAIN_PATH/add_vocabs.py $SRC $TGT $DATA_PATH/ $PROC_PATH/)
+LANGSVOCAB=$(python $MAIN_PATH/add_vocabs.py $SRC $TGT $DATA_PATH/ $PROC_PATH/)
 VOCAB=$(echo $LANGSVOCAB | cut -d " " -f 3)
 
 

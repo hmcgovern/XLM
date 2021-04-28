@@ -1,4 +1,4 @@
-.PHONY: clean data lint requirements # sync_data_to_s3 sync_data_from_s3
+.PHONY: clean data lint requirements de-hsb-finetune # sync_data_to_s3 sync_data_from_s3
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -8,7 +8,8 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 # BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
 PROFILE = default
 PROJECT_NAME = low-resource-mt
-PYTHON_INTERPRETER = python3
+PYTHON_INTERPRETER = python
+# PYTHON_INTERPRETER = ~/.conda/envs/nmt/bin/python
 
 ### my globals ###
 # use the existing DATA_DIR value if it's set, otherwise MY user default
@@ -102,11 +103,28 @@ en-ro: mlm_enro_1024.pth codes_enro vocab_enro
 	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
 
 de-hsb-finetune: 
-	@bash get-data-xnli-mt.sh de 
-	@bash get_data_and_preprocess.sh --src de --tgt hsb
+	# rm -r $(NMT_DATA_DIR)/exp/hsb-de 
+	./get-data-xnli-mt.sh de 16000
+	./get_data_and_preprocess.sh --src de --tgt hsb --bpe 16000
+	# @bash ./finetune_LM.sh
+
+finetune:
+	./finetune_LM.sh
 
 de-hsb-nmt:
-	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-72021
+	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311
+de-bg-hsb:
+	@bash get-data-para.sh --pair de-bg --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311
+	@bash get-data-nmt.sh --src bg --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311 
+de-ru-hsb:
+	@bash get-data-para.sh --pair de-ru --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311
+	@bash get-data-nmt.sh --src de --tgt ru --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311 
+de-fr-hsb:
+	@bash get-data-para.sh --pair de-fr --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311
+	@bash get-data-nmt.sh --src de --tgt fr --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311
+de-ar-hsb:
+	@bash get-data-para.sh --pair de-ar --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311
+	@bash get-data-nmt.sh --src ar --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de/vocab.hsb-de-ext-by-28311 
 
 # NOTE: these can be condensed with rules, will be useful when there's a lot of them
 mlm_enro_1024.pth:

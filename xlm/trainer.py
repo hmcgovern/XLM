@@ -953,14 +953,14 @@ class EncDecTrainer(Trainer):
             # del enc2
 
             # logging to comet
-            # if self.n_total_iter % params.log_int == 0:
-            #     source = []
-            #     source.extend(convert_to_text(x1, len1, self.data['dico'], params))
-            #     ref = []
-            #     ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
-            #     voted = []
-            #     voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
-            #     self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rat_step'})
+            if self.n_total_iter % params.log_int == 0:
+                source = []
+                source.extend(convert_to_text(x1, len1, self.data['dico'], params))
+                ref = []
+                ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
+                voted = []
+                voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
+                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rat_step'})
 
             
             self.encoder.train()
@@ -1071,14 +1071,14 @@ class EncDecTrainer(Trainer):
             del enc2
 
             # logging to comet
-            # if self.n_total_iter % params.log_int == 0:
-            #     source = []
-            #     source.extend(convert_to_text(x1, len1, self.data['dico'], params))
-            #     ref = []
-            #     ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
-            #     voted = []
-            #     voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
-            #     self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rabt_step'})
+            if self.n_total_iter % params.log_int == 0:
+                source = []
+                source.extend(convert_to_text(x1, len1, self.data['dico'], params))
+                ref = []
+                ref.extend(convert_to_text(x2, len2, self.data['dico'], params))
+                voted = []
+                voted.extend(convert_to_text(x3, len3, self.data['dico'], params))
+                self.exp.log_text(f'SOURCE {lang1}: {source[0]}\nREF {lang2}: {ref[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rabt_step'})
 
             
             self.encoder.train()
@@ -1182,7 +1182,7 @@ class EncDecTrainer(Trainer):
             # free CUDA memory
             del enc1
 
-            # # logging to comet
+            # logging to comet
             # if self.n_total_iter % 100 == 0:
             #     source = []
             #     source.extend(convert_to_text(x1, len1, self.data['dico'], params))
@@ -1190,7 +1190,7 @@ class EncDecTrainer(Trainer):
             #     tgt.extend(convert_to_text(x2, len2, self.data['dico'], params))
             #     xbt = []
             #     xbt.extend(convert_to_text(x3, len3, self.data['dico'], params))
-            #     self.exp.log_text(f'Lang1 {lang1}: {source[0]}\nGenerated Lang2 {lang2}: {tgt[0]}\nRAT {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'rat_step'})
+            #     self.exp.log_text(f'Lang1 {lang1}: {source[0]}\n Generated Lang2 {lang2}: {tgt[0]}\n  {lang3}: {voted[0]}', step=self.n_total_iter, metadata={'category': 'xbt_step'})
 
             
             self.encoder.train()
@@ -1275,13 +1275,13 @@ class EncDecTrainer(Trainer):
             # NOTE: attempting to log the back-translation attempt just for viewing purposes
             # so i can monitor it over time 
             # every 100 training steps, take the first three sentences and compare them to the original and following
-            # if self.n_total_iter % params.log_int == 0:
-            #     orig = []
-            #     orig.extend(convert_to_text(x1, len1, self.data['dico'], params))
-            #     # self.exp.log_text(orig[:3], step=self.n_iter, metadata={'category': 'bt_step', 'name': f'{lang1}-original', 'lang': lang1})
-            #     bt1 = []
-            #     bt1.extend(convert_to_text(x2, len2, self.data['dico'], params))
-            #     # self.exp.log_text(bt1[:3], step=self.n_iter, metadata={'category': 'bt_step','name': f'bt', 'lang': lang2})
+            if self.n_total_iter % params.log_int == 0:
+                orig = []
+                orig.extend(convert_to_text(x1, len1, self.data['dico'], params))
+                # self.exp.log_text(orig[:3], step=self.n_iter, metadata={'category': 'bt_step', 'name': f'{lang1}-original', 'lang': lang1})
+                bt1 = []
+                bt1.extend(convert_to_text(x2, len2, self.data['dico'], params))
+                # self.exp.log_text(bt1[:3], step=self.n_iter, metadata={'category': 'bt_step','name': f'bt', 'lang': lang2})
 
             # free CUDA memory
             del enc1
@@ -1305,14 +1305,14 @@ class EncDecTrainer(Trainer):
                                 src_enc=enc2, src_len=len2, encoder_only=False, 
                                 extra_adapters_flag=True)
         # print('BT STEP:', dec3.size())
-        # if self.n_total_iter % params.log_int ==0:
-        #     # translate back and log
-        #     x3, len3 = _decoder.generate(enc2, len2, lang1_id, max_len=int(1.3 * len2.max().item() + 5))
-        #     bt2 = []
-        #     bt2.extend(convert_to_text(x3, len3, self.data['dico'], params))
+        if self.n_total_iter % params.log_int ==0:
+            # translate back and log
+            x3, len3 = _decoder.generate(enc2, len2, lang1_id, max_len=int(1.3 * len2.max().item() + 5))
+            bt2 = []
+            bt2.extend(convert_to_text(x3, len3, self.data['dico'], params))
 
-        #     self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_total_iter, metadata={'category': 'bt_step'})
-        #     # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
+            self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_total_iter, metadata={'category': 'bt_step'})
+            # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
 
         # loss
         _, loss, _, _ = self.decoder('predict', tensor=dec3, pred_mask=pred_mask, y=y1, get_scores=False)

@@ -12,6 +12,7 @@
 set -e
 
 lg=$1
+bpe=$2
 
 # data paths
 MAIN_PATH=$XLM_REPO_DIR
@@ -42,7 +43,8 @@ if [ ! -d $OUTPATH/XNLI-15way ]; then
   unzip $OUTPATH/XNLI-15way.zip -d $OUTPATH
 fi
 # we've got a .tsv we need to separate into indivual languages, split--> $split_raw, tokenize --> #split_raw.tok, and binarize --> $split.$lg 
-DEV_OUT=$NMT_DATA_DIR/exp/hsb-$lg
+let BPE=bpe/1000
+DEV_OUT=$NMT_DATA_DIR/exp/hsb-$lg-"${BPE}k"
 mkdir -p $DEV_OUT
 
 

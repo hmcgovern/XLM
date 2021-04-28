@@ -12,34 +12,46 @@
 
 set -e
 
-pair=$1  # input language pair
-RELOAD_CODES=$2
-RELOAD_VOCAB=$3
+# pair=$1  # input language pair
+# RELOAD_CODES=$2
+# RELOAD_VOCAB=$3
+
+
+# these are values for splitting that will be overwritten for smaller datasets aka xnli
+NTRAIN_SUB=10000
+NVAL_SUB=5000
+
+
+#
+# Read arguments
+#
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case $key in
+  --pair)
+    pair="$2"; shift 2;;
+  --reload_codes)
+    RELOAD_CODES="$2"; shift 2;;
+  --reload_vocab)
+    RELOAD_VOCAB="$2"; shift 2;;
+  *)
+  POSITIONAL+=("$1")
+  shift
+  ;;
+esac
+done
+set -- "${POSITIONAL[@]}"
 
 echo $pair $RELOAD_CODES $RELOAD_VOCAB
 
-# #
-# # Read arguments
-# #
-# POSITIONAL=()
-# while [[ $# -gt 0 ]]
-# do
-# key="$1"
-# case $key in
-#   --pair)
-#     pair="$2"; shift 2;;
-#   --reload_codes)
-#     RELOAD_CODES="$2"; shift 2;;
-#   --reload_vocab)
-#     RELOAD_VOCAB="$2"; shift 2;;
-#   *)
-#   POSITIONAL+=("$1")
-#   shift
-#   ;;
-# esac
-# done
-# set -- "${POSITIONAL[@]}"
-
+SRC=$(echo $pair | cut -f1 -d-)
+TGT=$(echo $pair | cut -f2 -d-)
+# if they're in the wrong order, switch them
+if [ "$SRC" \> "$TGT" ]; then
+  pair=$TGT-$SRC
+fi
 
 #
 # Check parameters
@@ -65,7 +77,7 @@ LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # create directories
 mkdir -p $PARA_PATH
-mkdir -p $OUTPATH/para
+mkdir -p $OUTPATH
 
 
 #
@@ -218,6 +230,44 @@ if [ $pair == "en-zh" ]; then
 fi
 
 
+######## adding my own, non english centric pairs #########
+# the process is the same for all the xnli data
+if [ $SRC == "de" ]|| [ $TGT == "de" ];then
+  echo "Download parallel data for German-${TGT}"
+  # XNLI-15 way
+  PARENT_PATH=$(dirname $PARA_PATH)
+  wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $PARENT_PATH
+  if [ ! -d $PARENT_PATH/XNLI-15way ]; then
+    unzip $PARENT_PATH/XNLI-15way.zip -d $PARENT_PATH
+  fi
+  # for german and english, just cut the csv file 
+  for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+    csvcut -t -c $lg $PARENT_PATH/XNLI-15way/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $PARA_PATH/XNLI-15way.$pair.$lg
+  done
+  # reassigning these values bc the whole dataset is only 10k
+  NTRAIN_SUB=1000
+  NVAL_SUB=500
+fi
+
+
+
+# if [ $pair == "de-bg" ];then
+#   echo "Download parallel data for German-Bulgarian"
+#   # XNLI-15 way
+#   wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $PARA_PATH
+#   if [ ! -d $PARA_PATH/XNLI-15way ]; then
+#     unzip $PARA_PATH/XNLI-15way.zip -d $PARA_PATH
+#   fi
+#   # for german and english, just cut the csv file 
+#   for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+#     csvcut -t -c $lg $PARA_PATH/XNLI-15way/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $PARA_PATH/XNLI-15way.$pair.$lg
+#   done
+#   # reassigning these values bc the whole dataset is only 10k
+#   NTRAIN_SUB=2000
+#   NVAL_SUB=1500
+# fi
+
+
 #
 # Tokenize and preprocess data
 #
@@ -238,11 +288,11 @@ split_data() {
     };
     NLINES=`wc -l $1  | awk -F " " '{print $1}'`;
 
-    NTRAIN=$((NLINES - 10000));
-    NVAL=$((NTRAIN + 5000));
+    NTRAIN=$((NLINES - NTRAIN_SUB));
+    NVAL=$((NTRAIN + NVAL_SUB));
     shuf --random-source=<(get_seeded_random 42) $1 | head -$NTRAIN             > $2;
-    shuf --random-source=<(get_seeded_random 42) $1 | head -$NVAL | tail -5000  > $3;
-    shuf --random-source=<(get_seeded_random 42) $1 | tail -5000                > $4;
+    shuf --random-source=<(get_seeded_random 42) $1 | head -$NVAL | tail -$NVAL_SUB  > $3;
+    shuf --random-source=<(get_seeded_random 42) $1 | tail -$NVAL_SUB                > $4;
 }
 
 
@@ -256,6 +306,11 @@ echo "has been successfully split!"
 cd $MAIN_PATH
 echo "looking for BPE codes in"
 echo ${RELOAD_CODES}
+cp $RELOAD_CODES $OUTPATH/codes
+
+echo "looking for vocab in"
+echo ${RELOAD_VOCAB}
+cp $RELOAD_VOCAB $OUTPATH/vocab
 
 
 # fastBPE
@@ -264,8 +319,8 @@ FASTBPE=$TOOLS_PATH/fastBPE/fast
 
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   for split in train valid test; do
-    $FASTBPE applybpe $OUTPATH/para/$pair.$lg.$split $PARA_PATH/$pair.$lg.$split $OUTPATH/codes
-    python preprocess.py $OUTPATH/vocab $OUTPATH/para/$pair.$lg.$split
+    $FASTBPE applybpe $OUTPATH/$split.$pair.$lg $PARA_PATH/$split.$pair.$lg $OUTPATH/codes
+    python preprocess.py $OUTPATH/vocab $OUTPATH/$split.$pair.$lg
   done
 done
 

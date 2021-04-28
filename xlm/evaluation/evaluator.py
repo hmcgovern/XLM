@@ -116,7 +116,9 @@ class Evaluator(object):
             n_sentences = 600 if (data_set == 'test' or lang1 not in eval_lgs) else 1500
         elif len(self.params.langs) > 5:
             subsample = 10 if data_set == 'test' else 5
-            n_sentences = 300 if data_set == 'test' else 1500
+            # n_sentences = 300 if data_set == 'test' else 1500
+            #NOTE: this is a hack bc for xnli I only processed 500 valid sentences
+            n_sentences = 300 if data_set == 'test' else 500
         else:
             # n_sentences = -1 if data_set == 'valid' else 100
             n_sentences = -1
@@ -168,7 +170,7 @@ class Evaluator(object):
                 # text sentences
                 lang1_txt = []
                 lang2_txt = []
-
+                
                 # convert to text
                 for (sent1, len1), (sent2, len2) in self.get_iterator(data_set, lang1, lang2):
                     lang1_txt.extend(convert_to_text(sent1, len1, self.dico, params))

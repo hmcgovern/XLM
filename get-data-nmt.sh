@@ -45,8 +45,8 @@ set -- "${POSITIONAL[@]}"
 #
 if [ "$SRC" == "" ]; then echo "--src not provided"; exit; fi
 if [ "$TGT" == "" ]; then echo "--tgt not provided"; exit; fi
-if [ "$SRC" != "de" -a "$SRC" != "en" -a "$SRC" != "fr" -a "$SRC" != "ro" -a "$SRC" != "zh" ]; then echo "unknown source language"; exit; fi
-if [ "$TGT" != "de" -a "$TGT" != "en" -a "$TGT" != "fr" -a "$TGT" != "ro" -a "$TGT" != "zh" -a "$TGT" != "hsb"]; then echo "unknown target language"; exit; fi
+if [ "$SRC" != "de" -a "$SRC" != "en" -a "$SRC" != "fr" -a "$SRC" != "ro" -a "$SRC" != "zh" -a "$SRC" != "bg" -a "$SRC" != "ru" -a "$SRC" != "ar" ]; then echo "unknown source language"; exit; fi
+if [ "$TGT" != "de" -a "$TGT" != "en" -a "$TGT" != "fr" -a "$TGT" != "ro" -a "$TGT" != "zh" -a "$TGT" != "hsb" -a "$TGT" != "bg" -a "$TGT" != "ru" -a "$TGT" != "ar" ]; then echo "unknown target language"; exit; fi
 if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit; fi
 if [ "$SRC" \> "$TGT" ]; then echo "please ensure SRC < TGT"; exit; fi
 if [ "$RELOAD_CODES" != "" ] && [ ! -f "$RELOAD_CODES" ]; then echo "cannot locate BPE codes"; exit; fi
@@ -141,8 +141,6 @@ if [ "$SRC" == "de" -a "$TGT" == "en" ]; then
   PARA_TGT_VALID=$PARA_PATH/dev/newstest2013-ref.en
   PARA_SRC_TEST=$PARA_PATH/dev/newstest2016-ende-ref.de
   PARA_TGT_TEST=$PARA_PATH/dev/newstest2016-deen-ref.en
-  # PARA_SRC_TEST=$PARA_PATH/dev/newstest2014-deen-ref.de
-  # PARA_TGT_TEST=$PARA_PATH/dev/newstest2014-deen-ref.en
 fi
 if [ "$SRC" == "en" -a "$TGT" == "ro" ]; then
   PARA_SRC_VALID=$PARA_PATH/dev/newsdev2016-roen-ref.en
@@ -175,6 +173,35 @@ fi
 # install tools
 ./install-tools.sh
 # ${MAIN_PATH}/install-tools.sh
+
+
+if [ "$SRC" == "de" -a "$TGT" == "bg" ]; then
+  PARA_SRC_VALID=$PARA_PATH/bg-de/valid.de-bg.de
+  PARA_TGT_VALID=$PARA_PATH/bg-de/valid.de-bg.bg
+  PARA_SRC_TEST=$PARA_PATH/bg-de/test.de-bg.de
+  PARA_TGT_TEST=$PARA_PATH/bg-de/test.de-bg.bg
+fi
+
+if [ "$SRC" == "de" -a "$TGT" == "ru" ]; then
+  PARA_SRC_VALID=$PARA_PATH/de-ru/valid.de-ru.de
+  PARA_TGT_VALID=$PARA_PATH/de-ru/valid.de-ru.ru
+  PARA_SRC_TEST=$PARA_PATH/de-ru/test.de-ru.de
+  PARA_TGT_TEST=$PARA_PATH/de-ru/test.de-ru.ru
+fi
+
+if [ "$SRC" == "de" -a "$TGT" == "ar" ]; then
+  PARA_SRC_VALID=$PARA_PATH/ar-de/valid.ar-de.de
+  PARA_TGT_VALID=$PARA_PATH/ar-de/valid.ar-de.ar
+  PARA_SRC_TEST=$PARA_PATH/ar-de/test.ar-de.de
+  PARA_TGT_TEST=$PARA_PATH/ar-de/test.ar-de.ar
+fi
+
+if [ "$SRC" == "de" -a "$TGT" == "fr" ]; then
+  PARA_SRC_VALID=$PARA_PATH/de-fr/valid.de-fr.de
+  PARA_TGT_VALID=$PARA_PATH/de-fr/valid.de-fr.fr
+  PARA_SRC_TEST=$PARA_PATH/de-fr/test.de-fr.de
+  PARA_TGT_TEST=$PARA_PATH/de-fr/test.de-fr.fr
+fi
 
 # ###################################################################################################
 # #
@@ -274,6 +301,55 @@ if [ "$SRC" == "ro" -o "$TGT" == "ro" ]; then
   cd $MONO_PATH/ro
   wget -c http://data.statmt.org/wmt16/translation-task/news.2015.ro.shuffled.gz
 fi
+
+
+if [ "$SRC" == "bg" -o "$TGT" == "bg" ]; then
+  echo "Downloading Bulgarian monolingual data ..."
+  mkdir -p $MONO_PATH/bg
+  cd $MONO_PATH/bg
+
+  wget -c http://data.statmt.org/news-crawl/bg/news.2013.bg.shuffled.deduped.gz
+  wget -c http://data.statmt.org/news-crawl/bg/news.2014.bg.shuffled.deduped.gz	
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2015.bg.shuffled.deduped.gz	
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2016.bg.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2017.bg.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2018.bg.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2019.bg.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2020.bg.shuffled.deduped.gz
+
+fi
+
+
+if [ "$SRC" == "ru" -o "$TGT" == "ru" ]; then
+  echo "Downloading Russian monolingual data ..."
+  mkdir -p $MONO_PATH/ru
+  cd $MONO_PATH/ru
+
+  wget -c http://data.statmt.org/news-crawl/ru/news.2008.ru.shuffled.deduped.gz
+  wget -c http://data.statmt.org/news-crawl/ru/news.2009.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2010.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2011.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2012.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2013.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2014.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2015.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2016.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2017.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2018.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2019.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2020.ru.shuffled.deduped.gz
+
+fi
+
+if [ "$SRC" == "ar" -o "$TGT" == "ar" ]; then
+  echo "Downloading Arabic monolingual data ..."
+  mkdir -p $MONO_PATH/ar
+  cd $MONO_PATH/ar
+
+  wget -c http://data.statmt.org/news-crawl/ar/news.2020.ar.shuffled.deduped.gz	
+
+fi
+
 
 cd $MONO_PATH
 
@@ -417,6 +493,44 @@ echo "$SRC binarized data in: $SRC_TRAIN_BPE.pth"
 echo "$TGT binarized data in: $TGT_TRAIN_BPE.pth"
 
 
+if [ "$SRC" == "de" ] && [ ! "$TGT" == "hsb" ] || [ "$TGT" == "de" ]; then
+ # we just gon symlink the valid and test to the ones in de-$TGT folder and exit the file. good thinking
+
+  #
+  # Link monolingual validation and test data to parallel data
+  #
+  ln -sf $PARA_SRC_VALID_BPE.pth $SRC_VALID_BPE.pth
+  ln -sf $PARA_TGT_VALID_BPE.pth $TGT_VALID_BPE.pth
+  ln -sf $PARA_SRC_TEST_BPE.pth  $SRC_TEST_BPE.pth
+  ln -sf $PARA_TGT_TEST_BPE.pth  $TGT_TEST_BPE.pth
+
+  #
+  # Summary
+  #
+  echo ""
+  echo "===== Data summary"
+  echo "Monolingual training data:"
+  echo "    $SRC: $SRC_TRAIN_BPE.pth"
+  echo "    $TGT: $TGT_TRAIN_BPE.pth"
+  echo "Monolingual validation data:"
+  echo "    $SRC: $SRC_VALID_BPE.pth"
+  echo "    $TGT: $TGT_VALID_BPE.pth"
+  echo "Monolingual test data:"
+  echo "    $SRC: $SRC_TEST_BPE.pth"
+  echo "    $TGT: $TGT_TEST_BPE.pth"
+  echo "Parallel validation data:"
+  echo "    $SRC: $PARA_SRC_VALID_BPE.pth"
+  echo "    $TGT: $PARA_TGT_VALID_BPE.pth"
+  echo "Parallel test data:"
+  echo "    $SRC: $PARA_SRC_TEST_BPE.pth"
+  echo "    $TGT: $PARA_TGT_TEST_BPE.pth"
+  echo ""
+
+  exit
+
+
+fi
+
 #
 # Download parallel data (for evaluation only)
 #
@@ -473,7 +587,7 @@ echo "BPE codes applied to $TGT in: $PARA_TGT_VALID_BPE $PARA_TGT_TEST_BPE"
 
 
 # check valid and test files are here
-# won't be valid for hsb
+
 # if ! [[ -f "$PARA_SRC_VALID.sgm" ]]; then echo "$PARA_SRC_VALID.sgm is not found!"; exit; fi
 # if ! [[ -f "$PARA_TGT_VALID.sgm" ]]; then echo "$PARA_TGT_VALID.sgm is not found!"; exit; fi
 # if ! [[ -f "$PARA_SRC_TEST.sgm" ]];  then echo "$PARA_SRC_TEST.sgm is not found!";  exit; fi
@@ -536,3 +650,5 @@ echo "Parallel test data:"
 echo "    $SRC: $PARA_SRC_TEST_BPE.pth"
 echo "    $TGT: $PARA_TGT_TEST_BPE.pth"
 echo ""
+
+

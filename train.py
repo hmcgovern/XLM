@@ -256,7 +256,7 @@ def main(params):
     
     # start a comet project
     if params.debug_train:
-        experiment = Experiment(workspace="hopemcgovern", log_code=True)#, disabled=True)
+        experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
     else:
         experiment = Experiment(workspace="hopemcgovern", log_code=True)
     experiment.set_name(params.exp_name)

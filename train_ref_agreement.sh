@@ -43,7 +43,7 @@ python ./train.py \
 --max_vocab 95000 \
 --amp 1 \
 --fp16 true \
---reload_checkpoint 
+# --reload_checkpoint 
 
 # --rabt_steps "en-${ref}-de,${ref}-en-de" \
 # --xbt_steps "en-de-${ref},${ref}-de-en" \
