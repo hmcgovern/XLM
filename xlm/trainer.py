@@ -16,7 +16,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.utils import clip_grad_norm_
 import apex
-# from .apex import apex as apex
 
 from .optim import get_optimizer
 from .utils import to_cuda, concat_batches, find_modules
@@ -967,7 +966,7 @@ class EncDecTrainer(Trainer):
             self.decoder.train()
         
         # # the agreed-upon translation, length, and lang_id
-        # x3, len3, langs3= to_cuda(x3, len3, langs3)
+        x3, len3, langs3= to_cuda(x3, len3, langs3)
         
         # encode generated agreed-upon translation
         # enc3 = self.encoder('fwd', x=x3, lengths=len3, langs=langs3, causal=False)
@@ -1085,7 +1084,7 @@ class EncDecTrainer(Trainer):
             self.decoder.train()
         
         # # the agreed-upon translation, length, and lang_id
-        # x3, len3, langs3= to_cuda(x3, len3, langs3)
+        x3, len3, langs3= to_cuda(x3, len3, langs3)
         
         # encode generated agreed-upon translation
         enc3, _ = self.encoder('fwd', x=x3, lengths=len3, langs=langs3, causal=False,

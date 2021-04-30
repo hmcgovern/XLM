@@ -240,6 +240,7 @@ def get_parser():
     parser.add_argument("--master_port", type=int, default=-1,
                         help="Master port (for multi-node SLURM jobs)")
 
+    # RE-LM
     parser.add_argument("--increase_vocab_by", type=int, default=0,
                         help="Increase the embeddings dimension (num words) by manually "
                              "specifying the difference from the previous vocabulary")
@@ -259,8 +260,8 @@ def main(params):
         experiment = Experiment(workspace="hopemcgovern", log_code=True, disabled=True)
     else:
         experiment = Experiment(workspace="hopemcgovern", log_code=True)
+    
     experiment.set_name(params.exp_name)
-    # experiment.log_code(file_name='train.sh')
     experiment.log_parameters(params)
     experiment.add_tag('XLM')
 
@@ -273,7 +274,7 @@ def main(params):
     # initialize SLURM signal handler for time limit / pre-emption
     init_signal_handler()
 
-    # load data
+    # going to put everything except the training, val, and test in the trainer class, 
     data = load_data(params)
 
     # build model

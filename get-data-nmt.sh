@@ -45,8 +45,8 @@ set -- "${POSITIONAL[@]}"
 #
 if [ "$SRC" == "" ]; then echo "--src not provided"; exit; fi
 if [ "$TGT" == "" ]; then echo "--tgt not provided"; exit; fi
-if [ "$SRC" != "de" -a "$SRC" != "en" -a "$SRC" != "fr" -a "$SRC" != "ro" -a "$SRC" != "zh" -a "$SRC" != "bg" -a "$SRC" != "ru" -a "$SRC" != "ar" ]; then echo "unknown source language"; exit; fi
-if [ "$TGT" != "de" -a "$TGT" != "en" -a "$TGT" != "fr" -a "$TGT" != "ro" -a "$TGT" != "zh" -a "$TGT" != "hsb" -a "$TGT" != "bg" -a "$TGT" != "ru" -a "$TGT" != "ar" ]; then echo "unknown target language"; exit; fi
+# if [ "$SRC" != "de" -a "$SRC" != "en" -a "$SRC" != "fr" -a "$SRC" != "ro" -a "$SRC" != "zh" -a "$SRC" != "bg" -a "$SRC" != "ru" -a "$SRC" != "ar" ]; then echo "unknown source language"; exit; fi
+# if [ "$TGT" != "de" -a "$TGT" != "en" -a "$TGT" != "fr" -a "$TGT" != "ro" -a "$TGT" != "zh" -a "$TGT" != "hsb" -a "$TGT" != "bg" -a "$TGT" != "ru" -a "$TGT" != "ar" ]; then echo "unknown target language"; exit; fi
 if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit; fi
 if [ "$SRC" \> "$TGT" ]; then echo "please ensure SRC < TGT"; exit; fi
 if [ "$RELOAD_CODES" != "" ] && [ ! -f "$RELOAD_CODES" ]; then echo "cannot locate BPE codes"; exit; fi
@@ -347,6 +347,17 @@ if [ "$SRC" == "ar" -o "$TGT" == "ar" ]; then
   cd $MONO_PATH/ar
 
   wget -c http://data.statmt.org/news-crawl/ar/news.2020.ar.shuffled.deduped.gz	
+
+fi
+
+
+if [ "$SRC" == "hi" -o "$TGT" == "hi" ]; then
+  echo "Downloading Hindi monolingual data ..."
+  mkdir -p $MONO_PATH/hi
+  cd $MONO_PATH/hi
+
+  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.hi.shuffled.gz
+  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.hi.shuffled.gz
 
 fi
 
