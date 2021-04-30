@@ -40,6 +40,17 @@ done
 set -- "${POSITIONAL[@]}"
 
 
+# switch order of src and tgt if necessary
+# SRC=$(echo $pair | cut -f1 -d-)
+# TGT=$(echo $pair | cut -f2 -d-)
+# if they're in the wrong order, switch them
+if [ "$SRC" \> "$TGT" ]; then
+  tmp1=$SRC #de
+  tmp2=$TGT #bg
+  SRC=$tmp2 
+  TGT=$tmp1
+fi
+
 #
 # Check parameters
 #

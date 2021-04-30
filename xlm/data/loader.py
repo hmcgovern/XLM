@@ -186,7 +186,7 @@ def load_para_data(params, data):
     data['para'] = {}
 
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps+ params.rabt_src_langs) #+ params.rat_steps) #+ params.rabt_steps + params.xbt_steps)
-
+    
 
     if (params.increase_vocab_for_lang is None and params.increase_vocab_from_lang is not None) or \
             (params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is None):
@@ -206,6 +206,7 @@ def load_para_data(params, data):
         data['para'][(src, tgt)] = {}
 
         for splt in ['train', 'valid', 'test']:
+
 
             # no need to load training data for evaluation
             if splt == 'train' and params.eval_only:
@@ -295,6 +296,7 @@ def check_data_params(params):
 
     # machine translation steps
     params.mt_steps = [tuple(s.split('-')) for s in params.mt_steps.split(',') if len(s) > 0]
+
     assert all([len(x) == 2 for x in params.mt_steps])
     assert all([l1 in params.langs and l2 in params.langs for l1, l2 in params.mt_steps])
     assert all([l1 != l2 for l1, l2 in params.mt_steps])
@@ -348,7 +350,7 @@ def check_data_params(params):
 
     # check monolingual datasets
     required_mono = set([l1 for l1, l2 in (params.mlm_steps + params.clm_steps) if l2 is None] + params.ae_steps + params.bt_src_langs + params.rat_src_langs)
-    print(required_mono)
+    
     try:
         params.mono_dataset = {
             # lang: {
@@ -383,14 +385,13 @@ def check_data_params(params):
                 if not os.path.isfile(p):
                     logger.error(f"{p} not found")
         assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
-
+    # print(params.mono_dataset)
+    
     
     # check parallel datasets
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps+ params.rabt_src_langs)
     required_para = required_para_train | set([(l2, l3) for _, l2, l3 in params.bt_steps])
-    print(required_para)
-    # this line was screwing something up, no idea why
-    # required_para = required_para_train | set([(l1, l2) for l1, l2, _ in params.rat_steps])
+
 
     try: 
         params.para_dataset = {
@@ -436,6 +437,8 @@ def check_data_params(params):
                 if not os.path.isfile(p2):
                     logger.error(f"{p2} not found")
         assert all([all([os.path.isfile(p1) and os.path.isfile(p2) for p1, p2 in paths.values()]) for paths in params.para_dataset.values()])
+
+    # print(params.para_dataset)
 
     # check that we can evaluate on BLEU
     assert params.eval_bleu is False or len(params.mt_steps + params.bt_steps) > 0

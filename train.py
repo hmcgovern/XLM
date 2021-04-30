@@ -196,7 +196,6 @@ def get_parser():
     parser.add_argument("--pc_steps", type=str, default="",
                         help="Parallel classification steps")
     # NOTE: mine!!
-    # also note, these might not be necessary with the prebuilt functionality
     parser.add_argument("--rat_steps", type=str, default="",
                         help="Reference agreement translation steps")
     parser.add_argument("--rabt_steps", type=str, default="",

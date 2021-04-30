@@ -103,7 +103,6 @@ en-ro: mlm_enro_1024.pth codes_enro vocab_enro
 	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
 
 de-hsb-finetune: 
-	# rm -r $(NMT_DATA_DIR)/exp/hsb-de 
 	./get-data-xnli-mt.sh de 16000
 	./get_data_and_preprocess.sh --src de --tgt hsb --bpe 16000
 	# @bash ./finetune_LM.sh
