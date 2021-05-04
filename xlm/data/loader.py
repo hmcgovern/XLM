@@ -385,7 +385,7 @@ def check_data_params(params):
                 if not os.path.isfile(p):
                     logger.error(f"{p} not found")
         assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
-    # print(params.mono_dataset)
+    print('mono', params.mono_dataset)
     
     
     # check parallel datasets
@@ -438,7 +438,7 @@ def check_data_params(params):
                     logger.error(f"{p2} not found")
         assert all([all([os.path.isfile(p1) and os.path.isfile(p2) for p1, p2 in paths.values()]) for paths in params.para_dataset.values()])
 
-    # print(params.para_dataset)
+    print('para', params.para_dataset)
 
     # check that we can evaluate on BLEU
     assert params.eval_bleu is False or len(params.mt_steps + params.bt_steps) > 0

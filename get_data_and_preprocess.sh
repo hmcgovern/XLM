@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# from https://raw.githubusercontent.com/alexandra-chron/relm_unmt/master/get_data_and_preprocess.sh
+# modified from https://raw.githubusercontent.com/alexandra-chron/relm_unmt/master/get_data_and_preprocess.sh
 
 # Copyright (c) 2019-present, Facebook, Inc.
 # All rights reserved.
@@ -69,6 +69,9 @@ INPUT_FROM_SGM=$MOSES/scripts/ems/support/input-from-sgm.perl
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
 FASTBPE=$TOOLS_PATH/fastBPE/fast
 
+LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
+
+
 # Sennrich's WMT16 scripts for Romanian preprocessing
 WMT16_SCRIPTS=$TOOLS_PATH/wmt16-scripts
 NORMALIZE_ROMANIAN=$WMT16_SCRIPTS/preprocess/normalise-romanian.py
@@ -101,7 +104,7 @@ TGT_TEST_TOK=$TGT_TEST.tok
 TGT_TEST_BPE=$PROC_PATH/test.$TGT
 
 # BPE / vocab files
-BPE_JOINT_CODES=$PROC_PATH/codes.$TGT-$SRC
+BPE_TGT_CODES=$PROC_PATH/codes.$TGT
 # BPE_CODES_HMR=$PROC_PATH/codes
 BPE_CODES_HMR=$DATA_PATH/codes # not lang spec bc it's 15 way
 SRC_VOCAB=$DATA_PATH/vocab.$SRC
@@ -122,39 +125,50 @@ PARA_TGT_TEST_BPE=$PROC_PATH/test.$SRC-$TGT.$TGT
 if [ "$SRC" == "ro" ]; then
   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 else
-  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
+  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR | python $LOWER_REMOVE_ACCENT |              $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 fi
 
 if [ "$TGT" == "ro" ]; then
   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
 else
-  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
+  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR | $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
 fi
 
 # tokenize data
 if ! [[ -f "$TGT_TRAIN_TOK" ]]; then
   echo "Tokenize $TGT monolingual data..."
-  eval "cat $TGT_TRAIN | $TGT_PREPROCESSING > $TGT_TRAIN_TOK"
+  eval "cat $TGT_TRAIN | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_TRAIN_TOK"
 fi
 
 echo "$TGT monolingual data tokenized in: $TGT_TRAIN_TOK"
 
-# learn BPE codes on the concatenation of the SRC and TGT datasets
-if [ ! -f "$BPE_JOINT_CODES" ]; then
+# learn BPE codes on the hsb data
+
+if [ ! -f "$BPE_TGT_CODES" ]; then
   echo "Learning BPE codes..."
-  $FASTBPE learnbpe $CODES $SRC_TRAIN_TOK $TGT_TRAIN_TOK > $BPE_JOINT_CODES
+  $FASTBPE learnbpe $CODES $TGT_TRAIN_TOK > $BPE_TGT_CODES
 fi
-echo "BPE learned in $BPE_JOINT_CODES"
+echo "BPE learned in $BPE_TGT_CODES"
+
+
+# learn BPE codes on the concatenation of the SRC and TGT datasets
+# this is only the de-hsb data, we want it 
+# if [ ! -f "$BPE_JOINT_CODES" ]; then
+#   echo "Learning BPE codes..."
+#   $FASTBPE learnbpe $CODES $SRC_TRAIN_TOK $TGT_TRAIN_TOK > $BPE_JOINT_CODES
+# fi
+# echo "BPE learned in $BPE_JOINT_CODES"
 
 # apply BPE codes
 if ! [[ -f "$TGT_TRAIN_BPE" ]]; then
   echo "Applying joint BPE codes to $TGT..."
-  $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TRAIN_TOK $BPE_JOINT_CODES
+  $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TRAIN_TOK $BPE_TGT_CODES #$BPE_CODES_HMR
+  # $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TRAIN_TOK $BPE_JOINT_CODES
 fi
 
 echo "BPE codes applied to $TGT in: $TGT_TRAIN_BPE"
 
-# extract target vocabulary
+# extract target (hsb) vocabulary
 if ! [[ -f "$TGT_VOCAB" ]]; then
   echo "Extracting vocabulary..."
   $FASTBPE getvocab $TGT_TRAIN_BPE > $TGT_VOCAB
@@ -165,7 +179,6 @@ echo "$TGT vocab in: $TGT_VOCAB"
 echo "Extracting vocabulary..."
 LANGSVOCAB=$(python $MAIN_PATH/add_vocabs.py $SRC $TGT $DATA_PATH/ $PROC_PATH/)
 VOCAB=$(echo $LANGSVOCAB | cut -d " " -f 3)
-
 
 VOCAB_FINAL=$PROC_PATH/$VOCAB
 echo "Full vocab in: $VOCAB_FINAL"
@@ -189,18 +202,18 @@ echo "Tokenizing valid and test data..."
 
 # tokenize data
 if ! [[ -f "$SRC_VALID_TOK" ]]; then
-  eval "cat $SRC_VALID | $SRC_PREPROCESSING > $SRC_VALID_TOK"
+  eval "cat $SRC_VALID | $SRC_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"
 fi
 if ! [[ -f "$SRC_TEST_TOK" ]]; then
-  eval "cat $SRC_TEST | $SRC_PREPROCESSING > $SRC_TEST_TOK"
+  eval "cat $SRC_TEST | $SRC_PREPROCESSING| python $LOWER_REMOVE_ACCENT > $SRC_TEST_TOK"
 fi
 
 if ! [[ -f "$TGT_VALID_TOK" ]]; then
-  eval "cat $TGT_VALID | $TGT_PREPROCESSING > $TGT_VALID_TOK"
+  eval "cat $TGT_VALID | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_VALID_TOK"
 fi
 
 if ! [[ -f "$TGT_TEST_TOK" ]]; then
-  eval "cat $TGT_TEST | $TGT_PREPROCESSING > $TGT_TEST_TOK"
+  eval "cat $TGT_TEST | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_TEST_TOK"
 fi
 
 echo "Applying BPE to valid and test files..."
@@ -208,8 +221,10 @@ echo "Applying BPE to valid and test files..."
 $FASTBPE applybpe $SRC_VALID_BPE "$SRC_VALID_TOK" $BPE_CODES_HMR
 $FASTBPE applybpe $SRC_TEST_BPE  "$SRC_TEST_TOK"  $BPE_CODES_HMR
 
-$FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_JOINT_CODES
-$FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_JOINT_CODES
+# $FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_JOINT_CODES
+# $FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_JOINT_CODES
+$FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_TGT_CODES
+$FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_TGT_CODES
 
 echo "Binarizing data..."
 rm -f  $SRC_VALID_BPE.pth $SRC_TEST_BPE.pth

@@ -175,11 +175,11 @@ fi
 
 ########## de/hsb development valid/test ##########
 if [ "$SRC" == "de" -a "$TGT" == "hsb" ]; then
-  PARA_SRC_VALID=$PARA_OUT/devel.hsb-de.de
-  PARA_TGT_VALID=$PARA_OUT/devel.hsb-de.hsb
+  PARA_SRC_VALID=$PARA_PATH/de-hsb/devel.hsb-de.de
+  PARA_TGT_VALID=$PARA_PATH/de-hsb/devel.hsb-de.hsb
   # NOTE: above two are from development set, bottom two are from blindtest set. Not good practice but oh well.
-  PARA_SRC_TEST=$PARA_OUT/blind_test.de-hsb.de
-  PARA_TGT_TEST=$PARA_OUT/blind_test.hsb-de.hsb
+  PARA_SRC_TEST=$PARA_PATH/de-hsb/blind_test.de-hsb.de
+  PARA_TGT_TEST=$PARA_PATH/de-hsb/blind_test.hsb-de.hsb
 fi 
 # install tools
 ./install-tools.sh
@@ -414,23 +414,23 @@ echo "$SRC monolingual data concatenated in: $SRC_RAW"
 echo "$TGT monolingual data concatenated in: $TGT_RAW"
 
 # # check number of lines
-# if ! [[ "$(wc -l < $SRC_RAW)" -eq "$N_MONO" ]]; then echo "ERROR: Number of lines does not match! Be sure you have $N_MONO sentences in your $SRC monolingual data."; exit; fi
-# if ! [[ "$(wc -l < $TGT_RAW)" -eq "$N_MONO" ]]; then echo "ERROR: Number of lines does not match! Be sure you have $N_MONO sentences in your $TGT monolingual data."; exit; fi
+if ! [[ "$(wc -l < $SRC_RAW)" -eq "$N_MONO" ]]; then echo "ERROR: Number of lines does not match! Be sure you have $N_MONO sentences in your $SRC monolingual data."; exit; fi
+if ! [[ "$(wc -l < $TGT_RAW)" -eq "$N_MONO" ]]; then echo "ERROR: Number of lines does not match! Be sure you have $N_MONO sentences in your $TGT monolingual data."; exit; fi
 
 # preprocessing commands - special case for Romanian
 if [ "$SRC" == "ro" ]; then
   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
-else
-  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT "
 # else
-#   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
+#   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT "
+else
+  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 fi
 if [ "$TGT" == "ro" ]; then
   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
-else
-  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT"
 # else
-#   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
+#   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT"
+else
+  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
 fi
 
 # tokenize data
@@ -443,8 +443,8 @@ if ! [[ -f "$TGT_TOK" ]]; then
   echo "Tokenize $TGT monolingual data..."
   eval "cat $TGT_RAW | $TGT_PREPROCESSING > $TGT_TOK"
 fi
-echo "$SRC monolingual data tokenized in: $SRC_TOK"
-echo "$TGT monolingual data tokenized in: $TGT_TOK"
+echo "$SRC monolingual data tokenized in: ${SRC_TOK}"
+echo "$TGT monolingual data tokenized in: ${TGT_TOK}"
 
 # reload BPE codes
 cd $MAIN_PATH
@@ -577,7 +577,7 @@ tar -xzvf blindtest_updated.tar.gz -C $PARA_OUT
 # tokenize data
 if ! [[ -f "$PARA_SRC_VALID.tok" ]] || [[ -f "$PARA_SRC_TEST.tok" ]]; then
   echo "Tokenize $SRC valid/test data..."
-  eval "cat $PARA_SRC_VALID | $SRC_PREPROCESSING > $$PARA_SRC_VALID.tok"
+  eval "cat $PARA_SRC_VALID | $SRC_PREPROCESSING > $PARA_SRC_VALID.tok"
   eval "cat $PARA_SRC_TEST | $SRC_PREPROCESSING > $PARA_SRC_TEST.tok"
 fi
 

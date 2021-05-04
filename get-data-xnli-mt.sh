@@ -4,9 +4,9 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 #
-# THIS SCRIPT SHOULD PROCESS XNLI GERMAN, MONOLINGUAL SORBIAN, AND SMALL DEV/TEST PARALLEL FOR DE-HSB
+# THIS SCRIPT SHOULD PROCESS XNLI languages, MONOLINGUAL SORBIAN, AND SMALL DEV/TEST PARALLEL FOR DE-HSB with XNLI-15 codes 
 #
-# Usage: ./get-data-xnli.sh de
+# Usage: ./get-data-xnli.sh de num_codes
 #
 
 set -e
@@ -89,7 +89,6 @@ cp $CODES $PROC_PATH/codes
 cp $VOCAB $PROC_PATH/vocab.$lg
 
 ############# hsb train data NOT PROCESSED, JUST DOWNLOADED ###########
-
 
 cd $DEV_OUT
 

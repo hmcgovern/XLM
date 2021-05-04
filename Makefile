@@ -96,22 +96,30 @@ test_environment:
 # preprocess: #test.de-en.de test.de-en.en #etc
 # 	@bash XLM/src/scripts/preprocess-data.sh
 
-en-de: mlm_ende_1024.pth codes_ende vocab_ende
-	@bash get-data-nmt.sh --src de --tgt en --reload_codes codes_ende --reload_vocab vocab_ende
+# en-de: mlm_ende_1024.pth codes_ende vocab_ende
+# 	@bash get-data-nmt.sh --src de --tgt en --reload_codes codes_ende --reload_vocab vocab_ende
 
-en-ro: mlm_enro_1024.pth codes_enro vocab_enro
-	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
+# en-ro: mlm_enro_1024.pth codes_enro vocab_enro
+# 	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
+
+
 
 de-hsb-finetune: 
-	./get-data-xnli-mt.sh de 16000
-	./get_data_and_preprocess.sh --src de --tgt hsb --bpe 16000
-	# @bash ./finetune_LM.sh
-
+	./get-data-xnli-mt.sh de 8000
+	./get_data_and_preprocess.sh --src de --tgt hsb --bpe 8000
+de-hsb-nmt:
+	# rm $(NMT_DATA_DIR)/mono/de/*.tok
+	# rm $(NMT_DATA_DIR)/mono/hsb/*.tok
+	# rm -r $(NMT_DATA_DIR)/para/de-hsb
+	# rm -r $(NMT_DATA_DIR)/processed/de 
+	# rm -r $(NMT_DATA_DIR)/processed/hsb 
+	# rm -r $(NMT_DATA_DIR)/processed/de-hsb
+	@bash get-data-para.sh --pair de-hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6681
+	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6681
+	
 finetune:
 	./finetune_LM.sh
 
-de-hsb-nmt:
-	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-16k/vocab.hsb-de-ext-by-13812
 de-bg-hsb:
 	@bash get-data-para.sh --pair de-bg --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-16k/vocab.hsb-de-ext-by-13812
 	@bash get-data-nmt.sh --src bg --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-16k/vocab.hsb-de-ext-by-13812 
@@ -126,44 +134,6 @@ de-ar-hsb:
 	@bash get-data-nmt.sh --src ar --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-16k/vocab.hsb-de-ext-by-13812 
 
 # NOTE: these can be condensed with rules, will be useful when there's a lot of them
-mlm_enro_1024.pth:
-	wget -c https://dl.fbaipublicfiles.com/XLM/mlm_enro_1024.pth
-codes_enfr:
-	wget -c https://dl.fbaipublicfiles.com/XLM/codes_enro
-
-vocab_enro:
-	wget -c https://dl.fbaipublicfiles.com/XLM/vocab_enro
-
-mlm_ende_1024.pth:
-	wget -c https://dl.fbaipublicfiles.com/XLM/mlm_ende_1024.pth
-
-codes_ende:
-	wget -c https://dl.fbaipublicfiles.com/XLM/codes_ende
-
-vocab_ende:
-	wget -c https://dl.fbaipublicfiles.com/XLM/vocab_ende
-
-mlm_xnli17_1280.pth:
-	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/mlm_17_1280.pth
-
-codes_xnli_17:
-	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/codes_xnli_17
-
-vocab_xnli_17:
-	cd ${NMT_EXP_DIR}/models & wget -c https://dl.fbaipublicfiles.com/XLM/vocab_xnli_17
-
-	# for lg in ar de en ; do \
-  	# 	./get-data-wiki.sh $$lg ${NMT_EXP_DIR}/data/wiki ; \
-	# done
-
-download-runmt-data: mlm_xnli17_1280.pth codes_xnli_17 vocab_xnli_17
-	@bash get-data-nmt.sh --src en --tgt fr --reload_codes codes_xnli_17 --reload_vocab vocab_xnli_17
-	@bash get-data-nmt.sh --src de --tgt en --reload_codes codes_xnli_17 --reload_vocab vocab_xnli_17
-
-	for pair in en-fr ; do \
-		./get-data-para.sh $$pair ./data/runmt_para ; \
-		./prepare-multi-data-nmt.sh $$pair ; \
-	done
 
 clean_para:
 	rm -r ${NMT_DATA_DIR}/processed/en-fr/para/
@@ -189,13 +159,7 @@ clean_para:
 	rm ${NMT_DATA_DIR}/processed/en-zh/vocab.en-zh
 	rm ${NMT_DATA_DIR}/processed/en-zh/vocab.en
 	rm ${NMT_DATA_DIR}/processed/en-zh/vocab.zh
-
-train: #get_pretrained
-	@bash train.sh 
-	#$(PROJECT_NAME) 
-
-train_runmt:
-	@bash train_ref_agreement.sh
+ 
 
 
 #################################################################################

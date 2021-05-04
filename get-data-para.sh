@@ -230,6 +230,53 @@ if [ $pair == "en-zh" ]; then
 fi
 
 
+if [ $pair == "de-hsb" ];then
+  echo "Download WMT20 parallel data for German-Upper Sorbian"
+  # we already have the valid and test data, just need train
+  # Upper sorbian side
+  wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/train.hsb-de.hsb.gz -P $PARA_PATH
+  if [ ! -d $PARA_PATH/train.hsb-de.hsb ]; then
+   gunzip -c $PARA_PATH/train.hsb-de.hsb.gz > $PARA_PATH/train.hsb-de.hsb
+  fi
+
+  wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/train.hsb-de.de.gz -P $PARA_PATH
+  if [ ! -d $PARA_PATH/train.hsb-de.de ]; then
+    gunzip -c $PARA_PATH/train.hsb-de.de.gz > $PARA_PATH/train.hsb-de.de
+  fi
+
+  # no need to split
+
+  # tokenize
+  for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+    # if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
+      # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
+      # removing bc the model i'm using only tokenizes, doesn't remove accents and lowercase
+    cat $PARA_PATH/train.hsb-de.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
+    # fi
+  done
+
+  # binarize
+  # reload BPE codes
+  cd $MAIN_PATH
+  echo "looking for BPE codes in: ${RELOAD_CODES}"
+  cp $RELOAD_CODES $OUTPATH/codes
+
+  echo "looking for vocab in: ${RELOAD_VOCAB}"
+  cp $RELOAD_VOCAB $OUTPATH/vocab
+
+  # fastBPE
+  FASTBPE_DIR=$TOOLS_PATH/fastBPE
+  FASTBPE=$TOOLS_PATH/fastBPE/fast
+
+  for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+    $FASTBPE applybpe $OUTPATH/train.$pair.$lg $PARA_PATH/train.hsb-de.$lg $OUTPATH/codes
+    python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.$lg
+  done
+
+exit
+fi
+
+
 ######## adding my own, non english centric pairs #########
 # the process is the same for all the xnli data
 if [ $SRC == "de" ]|| [ $TGT == "de" ];then
@@ -249,23 +296,6 @@ if [ $SRC == "de" ]|| [ $TGT == "de" ];then
   NVAL_SUB=500
 fi
 
-
-
-# if [ $pair == "de-bg" ];then
-#   echo "Download parallel data for German-Bulgarian"
-#   # XNLI-15 way
-#   wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $PARA_PATH
-#   if [ ! -d $PARA_PATH/XNLI-15way ]; then
-#     unzip $PARA_PATH/XNLI-15way.zip -d $PARA_PATH
-#   fi
-#   # for german and english, just cut the csv file 
-#   for lg in $(echo $pair | sed -e 's/\-/ /g'); do
-#     csvcut -t -c $lg $PARA_PATH/XNLI-15way/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $PARA_PATH/XNLI-15way.$pair.$lg
-#   done
-#   # reassigning these values bc the whole dataset is only 10k
-#   NTRAIN_SUB=2000
-#   NVAL_SUB=1500
-# fi
 
 
 #

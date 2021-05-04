@@ -7,7 +7,8 @@ if __name__ == '__main__':
     mono_path = sys.argv[3]
     proc_path = sys.argv[4]
 
-    # print(hmr_lang, lmr_lang)
+    # print(hmr_lang, lmr_lang, mono_path, proc_path)
+
     # mono_path = '$NMT_DATA_DIR/{}/'.format(hmr_lang)
     # proc_path = './data/{}-{}/'.format(lmr_lang, hmr_lang)
     # NMT_DATA_DIR = os.environ["NMT_DATA_DIR"]
@@ -20,7 +21,9 @@ if __name__ == '__main__':
     hmr_vocab_and_ind = []
     new_items_to_be_added = []
     overlapping_words = []
-    with open(mono_path + 'vocab.' + hmr_lang, 'r') as file1:
+
+    # with open(mono_path + 'vocab.' + hmr_lang, 'r') as file1:
+    with open('vocab_xnli_15', 'r') as file1:
         for line in file1:
             if len(line.split()) == 2:
                 hmr_vocab.append(line.split()[0])
