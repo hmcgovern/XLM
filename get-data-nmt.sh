@@ -420,17 +420,17 @@ if ! [[ "$(wc -l < $TGT_RAW)" -eq "$N_MONO" ]]; then echo "ERROR: Number of line
 # preprocessing commands - special case for Romanian
 if [ "$SRC" == "ro" ]; then
   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
-# else
-#   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT "
 else
-  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
+  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT "
+# else
+#   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 fi
 if [ "$TGT" == "ro" ]; then
   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
-# else
-#   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT"
 else
-  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
+  TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS | python $LOWER_REMOVE_ACCENT"
+# else
+#   TGT_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $TGT | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $TGT -no-escape -threads $N_THREADS"
 fi
 
 # tokenize data
@@ -457,6 +457,8 @@ if [ ! -f "$BPE_CODES" ] && [ -f "$RELOAD_CODES" ]; then
   cp $RELOAD_CODES $BPE_CODES
 fi
 
+ 
+
 # learn BPE codes
 if [ ! -f "$BPE_CODES" ]; then
   echo "Learning BPE codes..."
@@ -473,7 +475,13 @@ if ! [[ -f "$SRC_TRAIN_BPE" ]]; then
 fi
 if ! [[ -f "$TGT_TRAIN_BPE" ]]; then
   echo "Applying $TGT BPE codes..."
-  $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TOK $BPE_CODES
+  if [ "$TGT" == "hsb" ]; then
+    echo "Using hsb specific BPE codes..."
+    HSB_CODES="${NMT_DATA_DIR}/exp/hsb-de-8k/codes.hsb"
+    $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TOK $HSB_CODES
+  else
+    $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TOK $BPE_CODES
+  fi
 fi
 echo "BPE codes applied to $SRC in: $SRC_TRAIN_BPE"
 echo "BPE codes applied to $TGT in: $TGT_TRAIN_BPE"
@@ -599,8 +607,15 @@ if ! [[ -f "$PARA_SRC_VALID_BPE" ]] || [[ -f "$PARA_SRC_TEST_BPE" ]]; then
 fi
 if ! [[ -f "$PARA_TGT_VALID_BPE" ]] || [[ -f "$PARA_TGT_TEST_BPE" ]]; then
   echo "Applying $TGT BPE codes..."
-  $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID.tok $BPE_CODES
-  $FASTBPE applybpe $PARA_TGT_TEST_BPE $PARA_TGT_TEST.tok $BPE_CODES
+  if [ "$TGT" == "hsb" ]; then
+    echo "Using hsb specific BPE codes..."
+    HSB_CODES="${NMT_DATA_DIR}/exp/hsb-de-8k/codes.hsb"
+    $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID.tok $HSB_CODES
+    $FASTBPE applybpe $PARA_TGT_TEST_BPE $PARA_TGT_TEST.tok $HSB_CODES
+  else
+    $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID.tok $BPE_CODES
+    $FASTBPE applybpe $PARA_TGT_TEST_BPE $PARA_TGT_TEST.tok $BPE_CODES
+  fi
 fi
 
 echo "BPE codes applied to $SRC in: $PARA_SRC_VALID_BPE $PARA_SRC_TEST_BPE"

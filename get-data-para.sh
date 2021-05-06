@@ -247,19 +247,26 @@ if [ $pair == "de-hsb" ];then
   # no need to split
 
   # tokenize
-  for lg in $(echo $pair | sed -e 's/\-/ /g'); do
-    # if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
-      # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
-      # removing bc the model i'm using only tokenizes, doesn't remove accents and lowercase
-    cat $PARA_PATH/train.hsb-de.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
-    # fi
-  done
+  # german
+  eval "cat $PARA_PATH/train.hsb-de.de | $TOKENIZE de | python $LOWER_REMOVE_ACCENT > $PARA_PATH/de-hsb.de.all"
+  eval "cat $PARA_PATH/train.hsb-de.hsb | $TOKENIZE hsb | python $LOWER_REMOVE_ACCENT > $PARA_PATH/de-hsb.hsb.all"
+  # for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+  #   # if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
+  #   eval "cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all"
+  #     # removing bc the model i'm using only tokenizes, doesn't remove accents and lowercase
+  #   # cat $PARA_PATH/train.hsb-de.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
+  #   # fi
+  # done
 
   # binarize
   # reload BPE codes
   cd $MAIN_PATH
-  echo "looking for BPE codes in: ${RELOAD_CODES}"
+  echo "looking for German BPE codes in: ${RELOAD_CODES}"
   cp $RELOAD_CODES $OUTPATH/codes
+
+  HSB_CODES="${NMT_DATA_DIR}/exp/hsb-de-8k/codes.hsb"
+  echo "looking for Sorbian BPE codes in: ${HSB_CODES}"
+  cp $HSB_CODES $OUTPATH/codes.hsb
 
   echo "looking for vocab in: ${RELOAD_VOCAB}"
   cp $RELOAD_VOCAB $OUTPATH/vocab
@@ -268,10 +275,13 @@ if [ $pair == "de-hsb" ];then
   FASTBPE_DIR=$TOOLS_PATH/fastBPE
   FASTBPE=$TOOLS_PATH/fastBPE/fast
 
-  for lg in $(echo $pair | sed -e 's/\-/ /g'); do
-    $FASTBPE applybpe $OUTPATH/train.$pair.$lg $PARA_PATH/train.hsb-de.$lg $OUTPATH/codes
-    python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.$lg
-  done
+  # german
+  $FASTBPE applybpe $OUTPATH/train.$pair.de $PARA_PATH/train.hsb-de.de $OUTPATH/codes
+  python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.de
+
+  # hsb
+  $FASTBPE applybpe $OUTPATH/train.$pair.hsb $PARA_PATH/train.hsb-de.hsb $OUTPATH/codes.hsb
+  python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.hsb
 
 exit
 fi
@@ -305,9 +315,9 @@ fi
 # tokenize
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
-    # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all
+    eval "cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $PARA_PATH/$pair.$lg.all"
     # removing bc the model i'm using only tokenizes, doesn't remove accents and lowercase
-    cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
+    # cat $PARA_PATH/*.$pair.$lg | $TOKENIZE $lg > $PARA_PATH/$pair.$lg.all
   fi
 done
 
