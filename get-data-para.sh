@@ -244,11 +244,12 @@ if [ $pair == "de-hsb" ];then
     gunzip -c $PARA_PATH/train.hsb-de.de.gz > $PARA_PATH/train.hsb-de.de
   fi
 
-  # no need to split
+  # NO NEED TO SPLIT!
 
   # tokenize
   # german
   eval "cat $PARA_PATH/train.hsb-de.de | $TOKENIZE de | python $LOWER_REMOVE_ACCENT > $PARA_PATH/de-hsb.de.all"
+  # hsb
   eval "cat $PARA_PATH/train.hsb-de.hsb | $TOKENIZE hsb | python $LOWER_REMOVE_ACCENT > $PARA_PATH/de-hsb.hsb.all"
   # for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   #   # if [ ! -f $PARA_PATH/$pair.$lg.all ]; then
@@ -276,11 +277,11 @@ if [ $pair == "de-hsb" ];then
   FASTBPE=$TOOLS_PATH/fastBPE/fast
 
   # german
-  $FASTBPE applybpe $OUTPATH/train.$pair.de $PARA_PATH/train.hsb-de.de $OUTPATH/codes
+  $FASTBPE applybpe $OUTPATH/train.$pair.de $PARA_PATH/$pair.de.all $OUTPATH/codes
   python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.de
 
   # hsb
-  $FASTBPE applybpe $OUTPATH/train.$pair.hsb $PARA_PATH/train.hsb-de.hsb $OUTPATH/codes.hsb
+  $FASTBPE applybpe $OUTPATH/train.$pair.hsb $PARA_PATH/$pair.hsb.all $OUTPATH/codes.hsb
   python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.hsb
 
 exit

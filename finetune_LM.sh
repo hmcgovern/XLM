@@ -2,22 +2,18 @@
 export COMET_MODE=ONLINE
 export COMET_API_KEY="ZVTkXN5kScnbV6H4uBBZ97Qyv"
 export COMET_PROJECT_NAME='finetune-de-hsb'
-
-
-# ./get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab vocab_xnli_15
-
-# 
+ 
 
 # python ./train.py \
 #export NGPU=4; python -m torch.distributed.launch --nproc_per_node=$NGPU train.py \
 python ./train.py \
---exp_name finetune_de_hsb_mlm_tlm              \
---debug_train false                          \
+--exp_name finetune_de_hsb_mlm_tlm          \
+--debug_train true                         \
 --debug_slurm true                          \
 --dump_path $NMT_EXP_DIR/dumped/            \
 --reload_model 'mlm_tlm_xnli15_1024.pth'    \
---data_path $NMT_DATA_DIR/processed     \
---mlm_steps 'de,hsb,de-hsb'                        \
+--data_path $NMT_DATA_DIR/processed         \
+--mlm_steps 'de,hsb,de-hsb'                 \
 --lgs "ar-bg-de-el-en-es-fr-hi-ru-sw-th-tr-ur-vi-zh-hsb" \
 --use_lang_emb false                        \
 --emb_dim 1024                              \
@@ -32,7 +28,7 @@ python ./train.py \
 --epoch_size 20000                          \
 --increase_vocab_by 6257                    \
 --max_vocab 101257                          \
---validation_metrics valid_hsb_mlm_ppl      \
---stopping_criterion valid_hsb_mlm_ppl,10   
+--validation_metrics valid_mlm_acc          \
+--stopping_criterion valid_mlm_acc,10   
 
 
