@@ -81,7 +81,7 @@ if ! [[ -f "$SRC_TRAIN_BPE.pth" ]]; then
   python preprocess.py $VOCAB $SRC_TRAIN_BPE
 fi
 
-echo "$SRC binarized data in: $SRC_TRAIN_BPE.pth"
+echo "*** $SRC binarized data in: $SRC_TRAIN_BPE.pth ***"
 
 
 # copying codes and vocab to be in the right place for a later script
@@ -102,16 +102,16 @@ wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_mon
 for FILENAME in $DEV_OUT/*hsb.gz; do
   OUTPUT=${FILENAME%.gz}
   if [ ! -f "$OUTPUT" ] ; then
-    echo "Decompressing $FILENAME..."
+    echo "*** Decompressing $FILENAME... ***"
     gunzip -c $FILENAME > $OUTPUT
   else
-    echo "$OUTPUT already decompressed."
+    echo "*** $OUTPUT already decompressed. ***"
   fi
 done
 
 # hsb train data
 if ! [[ -f "$TGT_TRAIN" ]]; then
-    echo "Getting hsb train..."
+    echo "*** Getting hsb train... ***"
     cat $(ls $DEV_OUT/*monolingual.hsb | grep -v gz) > $TGT_TRAIN
 fi
 
@@ -142,31 +142,31 @@ TGT_TEST_BPE=$DEV_OUT/test.hsb
 for FILENAME in $DEV_OUT/*tar.gz; do
   OUTPUT=${FILENAME%.gz}
   if [ ! -f "$OUTPUT" ] ; then
-    echo "Decompressing $FILENAME..."
+    echo "*** Decompressing $FILENAME... ***"
     tar -xzvf $FILENAME
   else
-    echo "$OUTPUT already decompressed."
+    echo "*** $OUTPUT already decompressed. ***"
   fi
 done
 
 if ! [[ -f "$SRC_VALID" ]]; then
-    echo "Renaming german dev files..."
+    echo "*** Renaming german dev files... ***"
     cat $(ls $DEV_OUT/*test.hsb-$lg.$lg | grep -v gz) > $SRC_VALID
 fi
 
 if ! [[ -f "$SRC_TEST" ]]; then
-    echo "Renaming german dev files..."
+    echo "*** Renaming german dev files...***"
     cat $(ls $DEV_OUT/devel.hsb-$lg.$lg | grep -v gz) > $SRC_TEST
 fi
 
 
 if ! [[ -f "$TGT_VALID" ]]; then
-    echo "Renaming sorbian dev files..."
+    echo "*** Renaming sorbian dev files... ***"
     cat $(ls $DEV_OUT/*test.hsb-$lg.hsb | grep -v gz) > $TGT_VALID
 fi
 
 if ! [[ -f "$TGT_TEST" ]]; then
-    echo "Renaming sorbian dev files..."
+    echo "*** Renaming sorbian dev files... ***"
     cat $(ls $DEV_OUT/devel.hsb-$lg.hsb | grep -v gz) > $TGT_TEST
 fi
 

@@ -104,8 +104,9 @@ test_environment:
 
 
 
-de-hsb-finetune: 
-	./get-data-xnli-mt.sh de 8000
+de-hsb-vocab-extend: 
+# this downloads the DE xnli corpus and 
+	./get-data-xnli-mt.sh de 8000 
 	./get_data_and_preprocess.sh --src de --tgt hsb --bpe 8000
 de-hsb-nmt:
 	# rm $(NMT_DATA_DIR)/mono/de/*.tok
@@ -114,24 +115,33 @@ de-hsb-nmt:
 	# rm -r $(NMT_DATA_DIR)/processed/de 
 	# rm -r $(NMT_DATA_DIR)/processed/hsb 
 	# rm -r $(NMT_DATA_DIR)/processed/de-hsb
-	@bash get-data-para.sh --pair de-hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
-	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
+	@bash get-data-para.sh --pair de-hsb --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+
+	# @bash get-data-para.sh --pair de-hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	# @bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
 	
 finetune:
 	./finetune_LM.sh
 
+de-en-hsb: 
+	@bash get-data-para.sh --pair en-de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src en --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
 de-bg-hsb:
-	@bash get-data-para.sh --pair de-bg --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
-	@bash get-data-nmt.sh --src bg --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257 
+	@bash get-data-para.sh --pair de-bg --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src bg --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
 de-ru-hsb:
-	@bash get-data-para.sh --pair de-ru --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
-	@bash get-data-nmt.sh --src de --tgt ru --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257 
+	@bash get-data-para.sh --pair de-ru --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src de --tgt ru --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
 de-fr-hsb:
-	@bash get-data-para.sh --pair de-fr --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
-	@bash get-data-nmt.sh --src de --tgt fr --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
+	@bash get-data-para.sh --pair de-fr --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src de --tgt fr --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
 de-ar-hsb:
-	@bash get-data-para.sh --pair de-ar --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257
-	@bash get-data-nmt.sh --src ar --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-6257 
+	@bash get-data-para.sh --pair de-ar --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src ar --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
+de-hi-hsb:
+	@bash get-data-para.sh --pair de-hi --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-nmt.sh --src hi --tgt de --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
 
 # NOTE: these can be condensed with rules, will be useful when there's a lot of them
 

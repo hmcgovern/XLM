@@ -262,12 +262,8 @@ if [ $pair == "de-hsb" ];then
   # binarize
   # reload BPE codes
   cd $MAIN_PATH
-  echo "looking for German BPE codes in: ${RELOAD_CODES}"
+  echo "looking for BPE codes in: ${RELOAD_CODES}"
   cp $RELOAD_CODES $OUTPATH/codes
-
-  HSB_CODES="${NMT_DATA_DIR}/exp/hsb-de-8k/codes.hsb"
-  echo "looking for Sorbian BPE codes in: ${HSB_CODES}"
-  cp $HSB_CODES $OUTPATH/codes.hsb
 
   echo "looking for vocab in: ${RELOAD_VOCAB}"
   cp $RELOAD_VOCAB $OUTPATH/vocab
@@ -281,7 +277,7 @@ if [ $pair == "de-hsb" ];then
   python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.de
 
   # hsb
-  $FASTBPE applybpe $OUTPATH/train.$pair.hsb $PARA_PATH/$pair.hsb.all $OUTPATH/codes.hsb
+  $FASTBPE applybpe $OUTPATH/train.$pair.hsb $PARA_PATH/$pair.hsb.all $OUTPATH/codes
   python preprocess.py $OUTPATH/vocab $OUTPATH/train.$pair.hsb
 
 exit

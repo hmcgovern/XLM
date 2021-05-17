@@ -45,13 +45,12 @@ if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit
 # main paths
 MAIN_PATH=$XLM_REPO_DIR
 TOOLS_PATH=$XLM_REPO_DIR/tools
-DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
+# we really want this to be the nmt_data DANG have to redo the way I do this
+DATA_PATH=$MAIN_PATH
+# DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
 # get the first two numbers of CODES and use it to decorate the processed path
 let EXT=$CODES/1000
 PROC_PATH=$NMT_DATA_DIR/exp/$TGT-$SRC-"${EXT}k" # this is where we put the hsb data and hsb-de parallel eval data
-
-# DATA_PATH=./data/$SRC
-# PROC_PATH=./data/$TGT-$SRC
 
 # create paths
 mkdir -p $TOOLS_PATH
@@ -70,7 +69,6 @@ FASTBPE_DIR=$TOOLS_PATH/fastBPE
 FASTBPE=$TOOLS_PATH/fastBPE/fast
 
 LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
-
 
 # Sennrich's WMT16 scripts for Romanian preprocessing
 WMT16_SCRIPTS=$TOOLS_PATH/wmt16-scripts
@@ -106,8 +104,9 @@ TGT_TEST_BPE=$PROC_PATH/test.$TGT
 # BPE / vocab files
 BPE_TGT_CODES=$PROC_PATH/codes.$TGT
 # BPE_CODES_HMR=$PROC_PATH/codes
-BPE_CODES_HMR=$DATA_PATH/codes # not lang spec bc it's 15 way
-SRC_VOCAB=$DATA_PATH/vocab.$SRC
+BPE_CODES_HMR=$DATA_PATH/codes_xnli_15 # not lang specific bc it's 15 way
+SRC_VOCAB=$DATA_PATH/vocab_xnli_15 # not lang specific bc it's 15 way
+# SRC_VOCAB=$DATA_PATH/vocab.$SRC
 # SRC_VOCAB=$DATA_PATH/vocab
 # SRC_VOCAB=$PROC_PATH/vocab.$SRC
 TGT_VOCAB=$PROC_PATH/vocab.$TGT
@@ -136,20 +135,35 @@ fi
 
 # tokenize data
 if ! [[ -f "$TGT_TRAIN_TOK" ]]; then
-  echo "Tokenize $TGT monolingual data..."
+  echo "*** Tokenize $TGT monolingual data... ***"
   eval "cat $TGT_TRAIN | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_TRAIN_TOK"
 fi
 
-echo "$TGT monolingual data tokenized in: $TGT_TRAIN_TOK"
+echo "*** $TGT monolingual data tokenized in: $TGT_TRAIN_TOK ***"
 
 # learn BPE codes on the hsb data
 
 if [ ! -f "$BPE_TGT_CODES" ]; then
-  echo "Learning BPE codes..."
+  echo "*** Learning BPE codes... ***"
   $FASTBPE learnbpe $CODES $TGT_TRAIN_TOK > $BPE_TGT_CODES
 fi
-echo "BPE learned in $BPE_TGT_CODES"
+echo "*** $TGT BPE learned in $BPE_TGT_CODES ***"
 
+BPE_JOINT_CODES=$PROC_PATH/codes.full
+
+
+# csvjoin -d ' ' -c 1,2 --outer --quoting 3 $BPE_CODES_HMR $BPE_TGT_CODES > $BPE_JOINT_CODES
+python join_codes.py --codes_path $PROC_PATH --final_codes_path $BPE_JOINT_CODES --top_k 80000
+
+# exit
+# the combined codes are in 
+# exit
+# should I just write a script to add the codes if they're not already there? 
+# then I can use the added codes
+
+# going to use csv cut. If the first two columns are the same, then add the third columns
+# if the combo of c1 and c2 is unique, add the entry to the bottom and keep the frequency count
+# this will privilege a lot of words 
 
 # learn BPE codes on the concatenation of the SRC and TGT datasets
 # this is only the de-hsb data, we want it 
@@ -161,44 +175,44 @@ echo "BPE learned in $BPE_TGT_CODES"
 
 # apply BPE codes
 if ! [[ -f "$TGT_TRAIN_BPE" ]]; then
-  echo "Applying joint BPE codes to $TGT..."
-  $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TRAIN_TOK $BPE_TGT_CODES #$BPE_CODES_HMR
+  echo "*** Applying joint BPE codes to $TGT... ***"
+  $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TRAIN_TOK $BPE_JOINT_CODES #$BPE_CODES_HMR
   # $FASTBPE applybpe $TGT_TRAIN_BPE $TGT_TRAIN_TOK $BPE_JOINT_CODES
 fi
 
-echo "BPE codes applied to $TGT in: $TGT_TRAIN_BPE"
+echo "*** BPE from $BPE_JOINT_CODES codes applied to $TGT in: $TGT_TRAIN_BPE ***"
 
 # extract target (hsb) vocabulary
 if ! [[ -f "$TGT_VOCAB" ]]; then
-  echo "Extracting vocabulary..."
+  echo "*** Extracting vocabulary... ***"
   $FASTBPE getvocab $TGT_TRAIN_BPE > $TGT_VOCAB
 fi
 echo "$TGT vocab in: $TGT_VOCAB"
 
 # compute full vocabulary
-echo "Extracting vocabulary..."
+echo "*** Extracting vocabulary... *** "
 LANGSVOCAB=$(python $MAIN_PATH/add_vocabs.py $SRC $TGT $DATA_PATH/ $PROC_PATH/)
 VOCAB=$(echo $LANGSVOCAB | cut -d " " -f 3)
 
 VOCAB_FINAL=$PROC_PATH/$VOCAB
-echo "Full vocab in: $VOCAB_FINAL"
+echo "*** Full vocab in: $VOCAB_FINAL ***"
 
 # binarize data
 if ! [[ -f "$SRC_TRAIN_BPE.pth" ]]; then
-  echo "Binarizing $SRC data..."
+  echo "*** Binarizing $SRC data... ***"
   $MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_TRAIN_BPE
 fi
 
-echo "$SRC binarized data in: $SRC_TRAIN_BPE.pth"
+echo "*** $SRC binarized data in: $SRC_TRAIN_BPE.pth ***"
 
 if ! [[ -f "$TGT_TRAIN_BPE.pth" ]]; then
-  echo "Binarizing $TGT data..."
+  echo "*** Binarizing $TGT data... ***"
   $MAIN_PATH/preprocess.py $VOCAB_FINAL $TGT_TRAIN_BPE
 fi
 
-echo "$TGT binarized data in: $TGT_TRAIN_BPE.pth"
+echo "*** $TGT binarized data in: $TGT_TRAIN_BPE.pth ***"
 
-echo "Tokenizing valid and test data..."
+echo "*** Tokenizing valid and test data... ***"
 
 # tokenize data
 if ! [[ -f "$SRC_VALID_TOK" ]]; then
@@ -216,17 +230,17 @@ if ! [[ -f "$TGT_TEST_TOK" ]]; then
   eval "cat $TGT_TEST | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_TEST_TOK"
 fi
 
-echo "Applying BPE to valid and test files..."
+echo "*** Applying BPE to valid and test files... ***"
 
 $FASTBPE applybpe $SRC_VALID_BPE "$SRC_VALID_TOK" $BPE_CODES_HMR
 $FASTBPE applybpe $SRC_TEST_BPE  "$SRC_TEST_TOK"  $BPE_CODES_HMR
 
-# $FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_JOINT_CODES
-# $FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_JOINT_CODES
-$FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_TGT_CODES
-$FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_TGT_CODES
+$FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_JOINT_CODES
+$FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_JOINT_CODES
+# $FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_TGT_CODES
+# $FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_TGT_CODES
 
-echo "Binarizing data..."
+echo "*** Binarizing data... ***"
 rm -f  $SRC_VALID_BPE.pth $SRC_TEST_BPE.pth
 rm -f  $TGT_VALID_BPE.pth $TGT_TEST_BPE.pth
 
