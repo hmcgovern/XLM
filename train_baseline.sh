@@ -18,16 +18,11 @@ python ./train.py \
 --lgs "ar-bg-de-el-en-es-fr-hi-ru-sw-th-tr-ur-vi-zh-hsb" \
 --max_vocab 123709 \
 --ae_steps "de,hsb" \
---lambda_ae '0:1,100000:0.1,300000:0' \
---mt_steps "de-hsb" \
---lambda_mt '0:1,100000:0.1,300000:0' \
+--rat_steps "de-bg-en-hsb" \
+--mt_steps "de-en,de-bg" \
 --bt_steps "de-hsb-de,hsb-de-hsb" \
---lambda_bt '0:1,100000:0.1,300000:0' \
 --log_int 1000 \
 --epsilon 0.1 \
---word_shuffle 3 \
---word_dropout 0.1 \
---word_blank 0.1 \
 --encoder_only false \
 --emb_dim 1024 \
 --n_layers 6 \
@@ -43,11 +38,23 @@ python ./train.py \
 --eval_bleu true \
 --stopping_criterion 'test_de-hsb_mt_bleu,10' \
 --validation_metrics 'valid_de-hsb_mt_bleu' \
---debug_train false \
+--debug_train true \
 --debug_slurm true \
 --amp 1 \
 --fp16 true \
 --accumulate_gradients 2 \
+# --ae_steps "de,hsb" \
+# --lambda_ae '0:1,100000:0.1,300000:0' \
+# --mt_steps "de-hsb" \
+# --lambda_mt '0:1,100000:0.1,300000:0' \
+# --bt_steps "de-hsb-de,hsb-de-hsb" \
+# --lambda_bt '0:1,100000:0.1,300000:0' \
+
+# --word_shuffle 3 \
+# --word_dropout 0.1 \
+# --word_blank 0.1 \
+
+
 # --master_port 10001 \
 # if not debug_slurm, need
 

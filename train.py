@@ -356,9 +356,12 @@ def main(params):
                 trainer.bt_step(lang1, lang2, lang3, params.lambda_bt)
 
             # reference-agreement-translation steps
-            for lang1, lang2, lang3 in shuf_order(params.rat_steps):
-                trainer.rat_step(lang1, lang2, lang3, params.lambda_rat)
+            # for lang1, lang2, lang3 in shuf_order(params.rat_steps):
+            for langs in shuf_order(params.rat_steps):
+                print('LANGS IS:', langs)
+                trainer.rat_step(langs, params.lambda_rat)
 
+            # TODO: make the same change to subsequent steps
             # reference-agreement-back-translation steps
             for lang1, lang2, lang3, in shuf_order(params.rabt_steps):
                 trainer.rabt_step(lang1, lang2, lang3, params.lambda_rabt)

@@ -115,6 +115,7 @@ class Trainer(object):
         self.n_iter = 0
         self.n_total_iter = 0
         self.n_sentences = 0
+        # NOTE: the RAT list is a hack atm bc I need it to be of flexible length 
         self.stats = OrderedDict(
             [('processed_s', 0), ('processed_w', 0)] +
             [('CLM-%s' % l, []) for l in params.langs] +
@@ -127,7 +128,7 @@ class Trainer(object):
             [('AE-%s' % lang, []) for lang in params.ae_steps] +
             [('MT-%s-%s' % (l1, l2), []) for l1, l2 in params.mt_steps] +
             [('BT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.bt_steps] +
-            [('RAT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.rat_steps] +
+            [('RAT-%s-%s-%s-%s' % (l1, l2, l3, l4), []) for l1, l2, l3, l4 in params.rat_steps] +
             [('RABT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.rabt_steps] +
             [('XBT-%s-%s-%s' % (l1, l2, l3), []) for l1, l2, l3 in params.xbt_steps]
         )
@@ -293,7 +294,9 @@ class Trainer(object):
         # log speed + stats + learning rate
         logger.info(s_iter + s_speed + s_stat + s_lr)
 
-    def get_iterator(self, iter_name, lang1, lang2, stream):
+    # adding a multi optional argument that if passed, supercedes lang1 and lang2 as inputs for iterator
+    # this is intended for retrieving a batch of parallel data from more than two languages at a time. 
+    def get_iterator(self, iter_name, lang1, lang2, stream, multi=None):
         """
         Create a new iterator for a dataset.
         """
@@ -310,32 +313,56 @@ class Trainer(object):
                 )
         else:
             assert stream is False
-            _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
-            iterator = self.data['para'][(_lang1, _lang2)]['train'].get_iterator(
-                shuffle=True,
-                group_by_size=self.params.group_by_size,
-                n_sentences=-1,
-            )
-
-        self.iterators[(iter_name, lang1, lang2)] = iterator
+            if multi == None:
+                _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
+                iterator = self.data['para'][(_lang1, _lang2)]['train'].get_iterator(
+                    shuffle=True,
+                    group_by_size=self.params.group_by_size,
+                    n_sentences=-1,
+                )
+            else:
+                print('MADE IT HERE')
+                # assumes multi is a tuple of languages, e.g. multi=('de', 'bg', 'en')
+                iterator = self.data['para'][multi]['train'].get_iterator(
+                    shuffle=True,
+                    group_by_size=self.params.group_by_size,
+                    n_sentences=-1,
+                )
+        if multi == None:
+            self.iterators[(iter_name, lang1, lang2)] = iterator 
+        else:
+            x = [iter_name]
+            for lang in multi:
+                x.append(lang)
+            self.iterators[tuple(x)] = iterator
+    
         return iterator
 
-    def get_batch(self, iter_name, lang1, lang2=None, stream=False):
+        
+    # NOTE: giving option to pass in an iterator so I can use it to get the same batch across multiple references
+    def get_batch(self, iter_name, lang1, lang2=None, stream=False, iterator=None):
         """
         Return a batch of sentences from a dataset.
         """
         assert lang1 in self.params.langs
         assert lang2 is None or lang2 in self.params.langs
         assert stream is False or lang2 is None
-        iterator = self.iterators.get((iter_name, lang1, lang2), None)
+        # if an iterator was not passed as an arg, get one
         if iterator is None:
-            iterator = self.get_iterator(iter_name, lang1, lang2, stream)
-        try:
+            iterator = self.iterators.get((iter_name, lang1, lang2), None)
+            if iterator is None:
+                iterator = self.get_iterator(iter_name, lang1, lang2, stream)
+            try:
+                x = next(iterator)
+            except StopIteration:
+                iterator = self.get_iterator(iter_name, lang1, lang2, stream)
+                x = next(iterator)
+            return x if lang2 is None or lang1 < lang2 else x[::-1]
+        # if an iterator was passed, get the data and return it
+        else:
             x = next(iterator)
-        except StopIteration:
-            iterator = self.get_iterator(iter_name, lang1, lang2, stream)
-            x = next(iterator)
-        return x if lang2 is None or lang1 < lang2 else x[::-1]
+            return x if lang2 is None or lang1 < lang2 else x[::-1]
+
 
     def word_shuffle(self, x, l):
         """
@@ -894,10 +921,12 @@ class EncDecTrainer(Trainer):
         self.stats['processed_w'] += (len2 - 1).sum().item()
 
 #######################################################################
-    def rat_step(self, lang1, lang2, lang3, lambda_coeff):
+    def rat_step(self, langs, lambda_coeff):
+       # okay, lets' change the individ langs to a langs list
+       # e.g. langs = ['de', 'en', 'fr', 'hsb']
         """
         Reference Agreement Step
-        Given lang1 and lang2, which are connected with parallel data, 
+        Given a LIST of langs lang1 and lang2, which are connected with parallel data, 
         simultaneously generates a translation in the target language by taking votes on the next-word prediction
         then trains lang1-->lang3 and lang2-->lang3 with the generated translation as gold label target.
         """
@@ -905,25 +934,95 @@ class EncDecTrainer(Trainer):
         assert lambda_coeff >= 0
         if lambda_coeff == 0:
             return
-        # ensuring that lang1 and lang2 have parallel data btw them
-        _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
-        assert (_lang1, _lang2) in self.params.para_dataset.keys()
-        # maybe assert _lang1, _lang2 in self.params.para_dataset.keys() if this doesn't work?
     
         params = self.params
          
         _encoder = self.encoder.module if params.multi_gpu else self.encoder
         _decoder = self.decoder.module if params.multi_gpu else self.decoder
 
-        lang1_id = params.lang2id[lang1]
-        lang2_id = params.lang2id[lang2]
-        lang3_id = params.lang2id[lang3]
-        # print(lang1_id, lang2_id, lang3_id)
+        lang_ids = [params.lang2id[lang] for lang in langs]
+        print(lang_ids)
 
+        tgt_lang = langs[-1]
+        src_lang = langs[0]
+        print(f'src: {src_lang}, tgt: {tgt_lang}')
+        refs = list(langs[1:-1])
+        print(refs) #['bg', 'en']
+
+        # the langs here are just dummies
+        my_iterator = self.get_iterator('mt', 'de', 'bg', stream=False, multi=langs[:-1])
+        exit()
+        idx = 1
+    
         # generate batch
-        (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2)
-        langs1 = x1.clone().fill_(lang1_id)
-        langs2 = x2.clone().fill_(lang2_id)
+        candidates = []
+        while len(refs) > 0:
+            ref = refs.pop()
+            print(f'REF: {ref}')
+            print(refs)
+            _lang1, _lang2 = (src_lang, ref) if src_lang < ref else (ref, src_lang)
+            print(_lang1, _lang2)
+            assert (_lang1, _lang2) in self.params.para_dataset.keys()
+            
+        
+            # get an iterator 
+            my_iterator = self.get_iterator('mt', _lang1, _lang2, stream=False, multi=())
+    
+            (x1, len1), (x2, len2) = self.get_batch('mt', _lang1, _lang2)
+            
+            # cuda
+            x1, len1, x2, len2,  = to_cuda(x1, len1, x2, len2)
+
+            source = []
+            source.extend(convert_to_text(x1, len1, self.data['dico'], params))
+            print(f'SOURCE: {source}')
+
+            target = []
+            target.extend(convert_to_text(x2, len2, self.data['dico'], params))
+            print(f'TARGET: {target}')
+            
+    
+            # # encode source and reference sentences (parallel to each other)
+            # langs1 = x1.clone().fill_(lang_ids[0])
+            # langs2 = x2.clone().fill_(lang_ids[idx])
+    
+            # # cuda
+            # x1, len1, langs1, x2, len2, langs2 = to_cuda(x1, len1, langs1, \
+            #                                             x2, len2, langs2)
+            
+            # self.encoder.eval()
+            # self.decoder.eval()
+            
+            # enc1, _ = _encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False, 
+            #                 extra_adapters_flag=True)
+            # enc1 = enc1.transpose(0, 1)
+
+            # enc2, _ = _encoder('fwd', x=x2, lengths=len2, langs=langs2, causal=False, 
+            #                 extra_adapters_flag=True)
+            # enc2 = enc2.transpose(0, 1)
+
+            # # decode TO agreed-upon FROM source
+            # dec1, _ = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, src_enc=enc1, src_len=len1,
+            #                         encoder_only=False, extra_adapters_flag=True)
+            # # decode TO agreed-upon FROM source
+            # dec2, _ = self.decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc2, src_len=len2,
+            #                         encoder_only=False, extra_adapters_flag=True)
+
+
+            # print(dec1)
+            # print(dec2)
+            # exit()
+            # langs1 = x1.clone().fill_(lang1_id)
+            # langs2 = x2.clone().fill_(lang2_id)
+        exit()
+        # want to check that each ref has parallel data with the first lang
+        # ensuring that lang1 and lang2 have parallel data btw them
+        # _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 else (lang2, lang1)
+        # assert (_lang1, _lang2) in self.params.para_dataset.keys()
+        # # generate batch
+        # (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2)
+        # langs1 = x1.clone().fill_(lang1_id)
+        # langs2 = x2.clone().fill_(lang2_id)
 
         # cuda
         x1, len1, langs1, x2, len2, langs2 = to_cuda(x1, len1, langs1, \
