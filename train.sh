@@ -9,13 +9,12 @@ export COMET_PROJECT_NAME='low-resource-mt'
 # export CUDA_VISIBLE_DEVICES=0,1
 # this is for multi GPU training:
 # 
-export PATH=/home/hem52/.conda/envs/nmt/bin:$PATH
 # export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
 python ./train.py \
 --exp_name unsupMT_en_de \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
 --reload_model "mlm_tlm_xnli15_1024.pth,mlm_tlm_xnli15_1024.pth" \
---data_path "${NMT_DATA_DIR}/exp/en_fr_de/"  \
+--data_path "${NMT_DATA_DIR}/processed/"  \
 --lgs 'de-en' \
 --ae_steps 'de,en' \
 --bt_steps 'de-en-de,en-de-en' \
@@ -40,12 +39,11 @@ python ./train.py \
 --stopping_criterion 'valid_en-de_mt_bleu,10' \
 --validation_metrics 'valid_en-de_mt_bleu' \
 --debug_train false \
---use_lang_emb false \
 --max_vocab 95000 \
 --amp 1 \
 --accumulate_gradients 4 \
 --fp16 true 
-
+# --use_lang_emb true \
 # --debug_train true 
 
 

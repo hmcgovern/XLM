@@ -302,7 +302,7 @@ if [ "$SRC" == "hsb" -o "$TGT" == "hsb" ]; then
   # NOTE: I rename it, just so all the downstream functionality can run smoothly and I don't have to hack it. 
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_monolingual.hsb.gz -O news.sorbian_institute_monolingual.hsb.gz
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/witaj_monolingual.hsb.gz -O news.witaj_monolingual.hsb.gz
-
+  wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/web_monolingual.hsb.gz -O news.web_monolingual.hsb.gz
 fi
 
 

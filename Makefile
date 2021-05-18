@@ -103,7 +103,6 @@ test_environment:
 # 	@bash get-data-nmt.sh --src en --tgt ro --reload_codes codes_enro --reload_vocab vocab_enro
 
 
-
 de-hsb-vocab-extend: 
 # this downloads the DE xnli corpus and 
 	./get-data-xnli-mt.sh de 8000 
