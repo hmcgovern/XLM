@@ -2,7 +2,7 @@
 
 export COMET_MODE=ONLINE
 export COMET_API_KEY="ZVTkXN5kScnbV6H4uBBZ97Qyv"
-export COMET_PROJECT_NAME='low-resource-mt'
+export COMET_PROJECT_NAME='unsupMT'
 # export COMET_DISABLE_AUTO_LOGGING=1
 
 ## main parameters
@@ -10,6 +10,9 @@ export COMET_PROJECT_NAME='low-resource-mt'
 # this is for multi GPU training:
 # 
 # export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
+NMT_DATA_DIR="/content/data"
+NMT_EXP_DIR="/content/data"
+
 python ./train.py \
 --exp_name unsupMT_en_de \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
@@ -22,6 +25,7 @@ python ./train.py \
 --word_dropout 0.1 \
 --word_blank 0.1 \
 --lambda_ae '0:1,100000:0.1,300000:0' \
+--lambda_bt '0:1,100000:0.1,300000:0' \
 --encoder_only false \
 --emb_dim 1024 \
 --n_layers 6 \
@@ -29,8 +33,7 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 1000 \
---batch_size 32 \
+--tokens_per_batch 500 \
 --bptt 256 \
 --max_len 200 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
@@ -43,6 +46,8 @@ python ./train.py \
 --amp 1 \
 --accumulate_gradients 4 \
 --fp16 true 
+
+
 # --use_lang_emb true \
 # --debug_train true 
 

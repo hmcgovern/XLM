@@ -35,30 +35,30 @@ LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 mkdir -p $OUTPATH
 mkdir -p $PROC_PATH
 
-# download data
-if [ ! -d $OUTPATH/XNLI-15way ]; then
-  if [ ! -f $OUTPATH/XNLI-15way.zip ]; then
-    wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $OUTPATH
-  fi
-  unzip $OUTPATH/XNLI-15way.zip -d $OUTPATH
-fi
+# # download data
+# if [ ! -d $OUTPATH/XNLI-15way ]; then
+#   if [ ! -f $OUTPATH/XNLI-15way.zip ]; then
+#     wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $OUTPATH
+#   fi
+#   unzip $OUTPATH/XNLI-15way.zip -d $OUTPATH
+# fi
 # we've got a .tsv we need to separate into indivual languages, split--> $split_raw, tokenize --> #split_raw.tok, and binarize --> $split.$lg 
 let BPE=bpe/1000
-DEV_OUT=$NMT_DATA_DIR/exp/hsb-$lg-"${BPE}k"
+DEV_OUT=$NMT_DATA_DIR/exp/hsb-"${BPE}k"
 mkdir -p $DEV_OUT
 
 
 # training things
-SRC_TRAIN=$PROC_PATH/train_raw.$lg
-SRC_TRAIN_TOK=$SRC_TRAIN.tok
-SRC_TRAIN_BPE=$DEV_OUT/train.$lg
+# SRC_TRAIN=$PROC_PATH/train_raw.$lg
+# SRC_TRAIN_TOK=$SRC_TRAIN.tok
+# SRC_TRAIN_BPE=$DEV_OUT/train.$lg
 
-echo "*** Extracting $lg data from the tsv file ***"
-# since I don't know the column number, I can't use awk easily. Installing a specialized package called csvkit to help
-if [ ! -f $SRC_TRAIN ]; then
-    # csvcut -t -c $lg $XNLI_PATH/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $XNLI_PATH/$lg.all
-    csvcut -t -c $lg $XNLI_PATH/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $SRC_TRAIN
-fi
+# echo "*** Extracting $lg data from the tsv file ***"
+# # since I don't know the column number, I can't use awk easily. Installing a specialized package called csvkit to help
+# if [ ! -f $SRC_TRAIN ]; then
+#     # csvcut -t -c $lg $XNLI_PATH/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $XNLI_PATH/$lg.all
+#     csvcut -t -c $lg $XNLI_PATH/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $SRC_TRAIN
+# fi
 
 
 # fastBPE
@@ -66,22 +66,22 @@ FASTBPE_DIR=$TOOLS_PATH/fastBPE
 FASTBPE=$TOOLS_PATH/fastBPE/fast
 
 
-echo "*** Tokenizing $lg train data ***" 
-if ! [[ -f "$SRC_TRAIN_TOK" ]]; then
-  eval "cat $SRC_TRAIN | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT  > $SRC_TRAIN_TOK"
-fi 
-echo "*** Applying BPE codes to $lg $split ***"
-if ! [[ -f "$SRC_TRAIN_BPE" ]]; then
-  $FASTBPE applybpe $SRC_TRAIN_BPE $SRC_TRAIN_TOK $CODES
-fi
+# echo "*** Tokenizing $lg train data ***" 
+# if ! [[ -f "$SRC_TRAIN_TOK" ]]; then
+#   eval "cat $SRC_TRAIN | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT  > $SRC_TRAIN_TOK"
+# fi 
+# echo "*** Applying BPE codes to $lg $split ***"
+# if ! [[ -f "$SRC_TRAIN_BPE" ]]; then
+#   $FASTBPE applybpe $SRC_TRAIN_BPE $SRC_TRAIN_TOK $CODES
+# fi
 
 
-echo "*** Binarizing $lg data ***"
-if ! [[ -f "$SRC_TRAIN_BPE.pth" ]]; then
-  python preprocess.py $VOCAB $SRC_TRAIN_BPE
-fi
+# echo "*** Binarizing $lg data ***"
+# if ! [[ -f "$SRC_TRAIN_BPE.pth" ]]; then
+#   python preprocess.py $VOCAB $SRC_TRAIN_BPE
+# fi
 
-echo "*** $SRC binarized data in: $SRC_TRAIN_BPE.pth ***"
+# echo "*** $SRC binarized data in: $SRC_TRAIN_BPE.pth ***"
 
 
 # copying codes and vocab to be in the right place for a later script
@@ -97,6 +97,8 @@ TGT_TRAIN=$DEV_OUT/train_raw.hsb
 
 
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_monolingual.hsb.gz
+wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/witaj_monolingual.hsb.gz 
+wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/web_monolingual.hsb.gz
 
 
 for FILENAME in $DEV_OUT/*hsb.gz; do
@@ -109,7 +111,7 @@ for FILENAME in $DEV_OUT/*hsb.gz; do
   fi
 done
 
-# hsb train data
+# concatenate all hsb train data
 if ! [[ -f "$TGT_TRAIN" ]]; then
     echo "*** Getting hsb train... ***"
     cat $(ls $DEV_OUT/*monolingual.hsb | grep -v gz) > $TGT_TRAIN
@@ -119,15 +121,15 @@ fi
 
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/devtest.tar.gz
 
-# SRC dev things
-SRC_VALID=$DEV_OUT/valid_raw.$lg
-SRC_VALID_TOK=$SRC_VALID.tok
-SRC_VALID_BPE=$DEV_OUT/valid.$lg
+# # SRC dev things
+# SRC_VALID=$DEV_OUT/valid_raw.$lg
+# SRC_VALID_TOK=$SRC_VALID.tok
+# SRC_VALID_BPE=$DEV_OUT/valid.$lg
 
-# SRC test things
-SRC_TEST=$DEV_OUT/test_raw.$lg
-SRC_TEST_TOK=$SRC_TEST.tok
-SRC_TEST_BPE=$DEV_OUT/test.$lg
+# # SRC test things
+# SRC_TEST=$DEV_OUT/test_raw.$lg
+# SRC_TEST_TOK=$SRC_TEST.tok
+# SRC_TEST_BPE=$DEV_OUT/test.$lg
 
 # TGT dev things
 TGT_VALID=$DEV_OUT/valid_raw.hsb
@@ -149,37 +151,39 @@ for FILENAME in $DEV_OUT/*tar.gz; do
   fi
 done
 
-if ! [[ -f "$SRC_VALID" ]]; then
-    echo "*** Renaming german dev files... ***"
-    cat $(ls $DEV_OUT/*test.hsb-$lg.$lg | grep -v gz) > $SRC_VALID
-fi
 
-if ! [[ -f "$SRC_TEST" ]]; then
-    echo "*** Renaming german dev files...***"
-    cat $(ls $DEV_OUT/devel.hsb-$lg.$lg | grep -v gz) > $SRC_TEST
-fi
+
+# if ! [[ -f "$SRC_VALID" ]]; then
+#     echo "*** Renaming german dev files... ***"
+#     cat $(ls $DEV_OUT/*test.hsb-$lg.$lg | grep -v gz) > $SRC_VALID
+# fi
+
+# if ! [[ -f "$SRC_TEST" ]]; then
+#     echo "*** Renaming german dev files...***"
+#     cat $(ls $DEV_OUT/devel.hsb-$lg.$lg | grep -v gz) > $SRC_TEST
+# fi
 
 
 if ! [[ -f "$TGT_VALID" ]]; then
     echo "*** Renaming sorbian dev files... ***"
-    cat $(ls $DEV_OUT/*test.hsb-$lg.hsb | grep -v gz) > $TGT_VALID
+    cat $(ls $DEV_OUT/devel.hsb-$lg.hsb | grep -v gz) > $TGT_VALID
 fi
 
 if ! [[ -f "$TGT_TEST" ]]; then
     echo "*** Renaming sorbian dev files... ***"
-    cat $(ls $DEV_OUT/devel.hsb-$lg.hsb | grep -v gz) > $TGT_TEST
+    cat $(ls $DEV_OUT/*test.hsb-$lg.hsb | grep -v gz) > $TGT_TEST
 fi
 
 # tokenizing dev & test
 cd $MAIN_PATH
-echo "*** Tokenizing $lg valid/test data ***" 
-if ! [[ -f "$SRC_VALID_TOK" ]]; then
-  eval "cat $SRC_VALID | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"
-fi 
+# echo "*** Tokenizing $lg valid/test data ***" 
+# if ! [[ -f "$SRC_VALID_TOK" ]]; then
+#   eval "cat $SRC_VALID | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"
+# fi 
 
-if ! [[ -f "$SRC_TEST_TOK" ]]; then
-  eval "cat $SRC_TEST | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $SRC_TEST_TOK"
-fi 
+# if ! [[ -f "$SRC_TEST_TOK" ]]; then
+#   eval "cat $SRC_TEST | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $SRC_TEST_TOK"
+# fi 
 
 # echo "*** Tokenizing hsb train/valid/test data ***"
 # if ! [[ -f "$TGT_TRAIN_TOK" ]]; then
@@ -194,14 +198,14 @@ fi
 #   eval "cat $TGT_TEST | $TOKENIZE hsb | python $LOWER_REMOVE_ACCENT  > $TGT_TEST_TOK"
 # fi 
 
-echo "*** Applying BPE codes to $lg valid/test ***"
-if ! [[ -f "$SRC_VALID_BPE" ]]; then
-  $FASTBPE applybpe $SRC_VALID_BPE $SRC_VALID_TOK $CODES
-fi
+# echo "*** Applying BPE codes to $lg valid/test ***"
+# if ! [[ -f "$SRC_VALID_BPE" ]]; then
+#   $FASTBPE applybpe $SRC_VALID_BPE $SRC_VALID_TOK $CODES
+# fi
 
-if ! [[ -f "$SRC_TEST_BPE" ]]; then
-  $FASTBPE applybpe $SRC_TEST_BPE $SRC_TEST_TOK $CODES
-fi
+# if ! [[ -f "$SRC_TEST_BPE" ]]; then
+#   $FASTBPE applybpe $SRC_TEST_BPE $SRC_TEST_TOK $CODES
+# fi
 
 # echo "*** Applying BPE codes to hsb train/valid/test ***"
 # if ! [[ -f "$TGT_TRAIN_BPE" ]]; then
@@ -216,13 +220,13 @@ fi
 #   $FASTBPE applybpe $TGT_TEST_BPE $TGT_TEST_TOK $CODES
 # fi
 
-echo "*** Binarizing $lg valid/test data ***"
-if ! [[ -f "$SRC_VALID_BPE.pth" ]]; then
-  python preprocess.py $VOCAB $SRC_VALID_BPE
-fi
-if ! [[ -f "$SRC_TEST_BPE.pth" ]]; then
-  python preprocess.py $VOCAB $SRC_TEST_BPE
-fi
+# echo "*** Binarizing $lg valid/test data ***"
+# if ! [[ -f "$SRC_VALID_BPE.pth" ]]; then
+#   python preprocess.py $VOCAB $SRC_VALID_BPE
+# fi
+# if ! [[ -f "$SRC_TEST_BPE.pth" ]]; then
+#   python preprocess.py $VOCAB $SRC_TEST_BPE
+# fi
 
 # echo "*** Binarizing hsb train/valid/test data ***"
 # if ! [[ -f "$TGT_TRAIN_BPE.pth" ]]; then
@@ -245,7 +249,7 @@ fi
 # echo "$TGT vocab in: $TGT_VOCAB"
 
 
-echo "$SRC valid binarized data in: $SRC_VALID_BPE.pth"
+# echo "$SRC valid binarized data in: $SRC_VALID_BPE.pth"
 # echo "$TGT valid binarized data in: $TGT_VALID_BPE.pth"
-echo "$SRC test binarized data in: $SRC_TEST_BPE.pth"
+# echo "$SRC test binarized data in: $SRC_TEST_BPE.pth"
 # echo "$TGT test binarized data in: $TGT_TEST_BPE.pth"

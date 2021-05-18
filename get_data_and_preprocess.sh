@@ -50,7 +50,7 @@ DATA_PATH=$MAIN_PATH
 # DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
 # get the first two numbers of CODES and use it to decorate the processed path
 let EXT=$CODES/1000
-PROC_PATH=$NMT_DATA_DIR/exp/$TGT-$SRC-"${EXT}k" # this is where we put the hsb data and hsb-de parallel eval data
+PROC_PATH=$NMT_DATA_DIR/exp/$TGT-"${EXT}k" # this is where we put the hsb data and hsb-de parallel eval data
 
 # create paths
 mkdir -p $TOOLS_PATH
@@ -75,18 +75,18 @@ WMT16_SCRIPTS=$TOOLS_PATH/wmt16-scripts
 NORMALIZE_ROMANIAN=$WMT16_SCRIPTS/preprocess/normalise-romanian.py
 REMOVE_DIACRITICS=$WMT16_SCRIPTS/preprocess/remove-diacritics.py
 
-SRC_TRAIN=$DATA_PATH/train_raw.$SRC
-SRC_TRAIN_TOK=$SRC_TRAIN.tok
-SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
+# SRC_TRAIN=$DATA_PATH/train_raw.$SRC
+# SRC_TRAIN_TOK=$SRC_TRAIN.tok
+# SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
 
-# NOTE: might need to change the PROC_PATH to DATA_PATH here
-SRC_VALID=$PROC_PATH/valid_raw.$SRC
-SRC_VALID_TOK=$SRC_VALID.tok
-SRC_VALID_BPE=$PROC_PATH/valid.$SRC
+# # NOTE: might need to change the PROC_PATH to DATA_PATH here
+# SRC_VALID=$PROC_PATH/valid_raw.$SRC
+# SRC_VALID_TOK=$SRC_VALID.tok
+# SRC_VALID_BPE=$PROC_PATH/valid.$SRC
 
-SRC_TEST=$PROC_PATH/test_raw.$SRC
-SRC_TEST_TOK=$SRC_TEST.tok
-SRC_TEST_BPE=$PROC_PATH/test.$SRC
+# SRC_TEST=$PROC_PATH/test_raw.$SRC
+# SRC_TEST_TOK=$SRC_TEST.tok
+# SRC_TEST_BPE=$PROC_PATH/test.$SRC
 
 # train/ valid/ test target file data
 TGT_TRAIN=$PROC_PATH/train_raw.$TGT
@@ -152,18 +152,8 @@ echo "*** $TGT BPE learned in $BPE_TGT_CODES ***"
 BPE_JOINT_CODES=$PROC_PATH/codes.full
 
 
-# csvjoin -d ' ' -c 1,2 --outer --quoting 3 $BPE_CODES_HMR $BPE_TGT_CODES > $BPE_JOINT_CODES
 python join_codes.py --codes_path $PROC_PATH --final_codes_path $BPE_JOINT_CODES --top_k 80000
 
-# exit
-# the combined codes are in 
-# exit
-# should I just write a script to add the codes if they're not already there? 
-# then I can use the added codes
-
-# going to use csv cut. If the first two columns are the same, then add the third columns
-# if the combo of c1 and c2 is unique, add the entry to the bottom and keep the frequency count
-# this will privilege a lot of words 
 
 # learn BPE codes on the concatenation of the SRC and TGT datasets
 # this is only the de-hsb data, we want it 
@@ -197,13 +187,13 @@ VOCAB=$(echo $LANGSVOCAB | cut -d " " -f 3)
 VOCAB_FINAL=$PROC_PATH/$VOCAB
 echo "*** Full vocab in: $VOCAB_FINAL ***"
 
-# binarize data
-if ! [[ -f "$SRC_TRAIN_BPE.pth" ]]; then
-  echo "*** Binarizing $SRC data... ***"
-  $MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_TRAIN_BPE
-fi
+# # binarize data
+# if ! [[ -f "$SRC_TRAIN_BPE.pth" ]]; then
+#   echo "*** Binarizing $SRC data... ***"
+#   $MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_TRAIN_BPE
+# fi
 
-echo "*** $SRC binarized data in: $SRC_TRAIN_BPE.pth ***"
+# echo "*** $SRC binarized data in: $SRC_TRAIN_BPE.pth ***"
 
 if ! [[ -f "$TGT_TRAIN_BPE.pth" ]]; then
   echo "*** Binarizing $TGT data... ***"
@@ -215,12 +205,12 @@ echo "*** $TGT binarized data in: $TGT_TRAIN_BPE.pth ***"
 echo "*** Tokenizing valid and test data... ***"
 
 # tokenize data
-if ! [[ -f "$SRC_VALID_TOK" ]]; then
-  eval "cat $SRC_VALID | $SRC_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"
-fi
-if ! [[ -f "$SRC_TEST_TOK" ]]; then
-  eval "cat $SRC_TEST | $SRC_PREPROCESSING| python $LOWER_REMOVE_ACCENT > $SRC_TEST_TOK"
-fi
+# if ! [[ -f "$SRC_VALID_TOK" ]]; then
+#   eval "cat $SRC_VALID | $SRC_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"
+# fi
+# if ! [[ -f "$SRC_TEST_TOK" ]]; then
+#   eval "cat $SRC_TEST | $SRC_PREPROCESSING| python $LOWER_REMOVE_ACCENT > $SRC_TEST_TOK"
+# fi
 
 if ! [[ -f "$TGT_VALID_TOK" ]]; then
   eval "cat $TGT_VALID | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_VALID_TOK"
@@ -232,8 +222,8 @@ fi
 
 echo "*** Applying BPE to valid and test files... ***"
 
-$FASTBPE applybpe $SRC_VALID_BPE "$SRC_VALID_TOK" $BPE_CODES_HMR
-$FASTBPE applybpe $SRC_TEST_BPE  "$SRC_TEST_TOK"  $BPE_CODES_HMR
+# $FASTBPE applybpe $SRC_VALID_BPE "$SRC_VALID_TOK" $BPE_CODES_HMR
+# $FASTBPE applybpe $SRC_TEST_BPE  "$SRC_TEST_TOK"  $BPE_CODES_HMR
 
 $FASTBPE applybpe $TGT_VALID_BPE "$TGT_VALID_TOK" $BPE_JOINT_CODES
 $FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_JOINT_CODES
@@ -241,11 +231,11 @@ $FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_JOINT_CODES
 # $FASTBPE applybpe $TGT_TEST_BPE  "$TGT_TEST_TOK"  $BPE_TGT_CODES
 
 echo "*** Binarizing data... ***"
-rm -f  $SRC_VALID_BPE.pth $SRC_TEST_BPE.pth
+# rm -f  $SRC_VALID_BPE.pth $SRC_TEST_BPE.pth
 rm -f  $TGT_VALID_BPE.pth $TGT_TEST_BPE.pth
 
-$MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_VALID_BPE
-$MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_TEST_BPE
+# $MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_VALID_BPE
+# $MAIN_PATH/preprocess.py $VOCAB_FINAL $SRC_TEST_BPE
 
 $MAIN_PATH/preprocess.py $VOCAB_FINAL $TGT_VALID_BPE
 $MAIN_PATH/preprocess.py $VOCAB_FINAL $TGT_TEST_BPE
@@ -253,9 +243,9 @@ $MAIN_PATH/preprocess.py $VOCAB_FINAL $TGT_TEST_BPE
 #
 # Link monolingual validation and test data to parallel data, also link SRC train set to this folder
 #
-ln $SRC_VALID_BPE.pth $PARA_SRC_VALID_BPE.pth
-ln $TGT_VALID_BPE.pth $PARA_TGT_VALID_BPE.pth
-ln $SRC_TEST_BPE.pth $PARA_SRC_TEST_BPE.pth
+# ln $SRC_VALID_BPE.pth $PARA_SRC_VALID_BPE.pth
+# ln $TGT_VALID_BPE.pth $PARA_TGT_VALID_BPE.pth
+# ln $SRC_TEST_BPE.pth $PARA_SRC_TEST_BPE.pth
 ln $TGT_TEST_BPE.pth $PARA_TGT_TEST_BPE.pth
 
 # Summary
