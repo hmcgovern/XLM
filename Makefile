@@ -104,7 +104,6 @@ test_environment:
 
 
 de-hsb-vocab-extend: 
-# this downloads the DE xnli corpus and 
 	./get-data-xnli-mt.sh de 8000 
 	./get_data_and_preprocess.sh --src de --tgt hsb --bpe 8000
 de-hsb-nmt:
@@ -114,8 +113,8 @@ de-hsb-nmt:
 	# rm -r $(NMT_DATA_DIR)/processed/de 
 	# rm -r $(NMT_DATA_DIR)/processed/hsb 
 	# rm -r $(NMT_DATA_DIR)/processed/de-hsb
-	@bash get-data-para.sh --pair de-hsb --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
-	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	# @bash get-data-para.sh --pair de-hsb --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
+	@bash get-data-nmt.sh --src de --tgt hsb --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
 
 	# @bash get-data-para.sh --pair de-hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
 	# @bash get-data-nmt.sh --src de --tgt hsb --reload_codes codes_xnli_15 --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381

@@ -152,7 +152,6 @@ for FILENAME in $DEV_OUT/*tar.gz; do
 done
 
 
-
 # if ! [[ -f "$SRC_VALID" ]]; then
 #     echo "*** Renaming german dev files... ***"
 #     cat $(ls $DEV_OUT/*test.hsb-$lg.$lg | grep -v gz) > $SRC_VALID
@@ -176,6 +175,9 @@ fi
 
 # tokenizing dev & test
 cd $MAIN_PATH
+
+cp codes_xnli_15 $NMT_DATA_DIR/exp/hsb-8k/codes.$Lg
+
 # echo "*** Tokenizing $lg valid/test data ***" 
 # if ! [[ -f "$SRC_VALID_TOK" ]]; then
 #   eval "cat $SRC_VALID | $TOKENIZE $lg | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"

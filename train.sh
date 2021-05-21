@@ -10,11 +10,11 @@ export COMET_PROJECT_NAME='unsupMT'
 # this is for multi GPU training:
 # 
 # export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU ./train.py \
-NMT_DATA_DIR="/content/data"
-NMT_EXP_DIR="/content/data"
+# NMT_DATA_DIR="/content/data"
+# NMT_EXP_DIR="/content/data"
 
 python ./train.py \
---exp_name unsupMT_en_de \
+--exp_name unsupMT_en_de_ext \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
 --reload_model "mlm_tlm_xnli15_1024.pth,mlm_tlm_xnli15_1024.pth" \
 --data_path "${NMT_DATA_DIR}/processed/"  \
@@ -33,7 +33,7 @@ python ./train.py \
 --dropout 0.1 \
 --attention_dropout 0.1 \
 --gelu_activation true \
---tokens_per_batch 500 \
+--tokens_per_batch 1000 \
 --bptt 256 \
 --max_len 200 \
 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 \
@@ -44,8 +44,9 @@ python ./train.py \
 --debug_train false \
 --max_vocab 95000 \
 --amp 1 \
---accumulate_gradients 4 \
 --fp16 true 
+# --accumulate_gradients 4 \
+
 
 
 # --use_lang_emb true \

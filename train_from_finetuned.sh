@@ -34,7 +34,7 @@ echo "XBT: " $XBT_STEPS
 python ./train.py \
 --exp_name "de_${LIST}hsb_8k" \
 --dump_path ${NMT_EXP_DIR}/dumped/ \
---reload_model "${NMT_EXP_DIR}/dumped/finetune_de_hsb_mlm_tlm_full-vocab/40000818/checkpoint.pth,${NMT_EXP_DIR}/dumped/finetune_de_hsb_mlm_tlm_full-vocab/40000818/checkpoint.pth" \
+--reload_model "${NMT_EXP_DIR}/dumped/finetune_de_hsb_mlm_full-vocab/40631027/checkpoint.pth,${NMT_EXP_DIR}/dumped/finetune_de_hsb_mlm_full-vocab/40631027/checkpoint.pth" \
 --data_path "${NMT_DATA_DIR}/processed/" \
 --lgs "ar-bg-de-el-en-es-fr-hi-ru-sw-th-tr-ur-vi-zh-hsb" \
 --ae_steps "de,hsb" \

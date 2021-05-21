@@ -134,7 +134,8 @@ class Trainer(object):
         self.last_time = time.time()
 
         # reload potential checkpoints
-        self.reload_checkpoint()
+        # NOTE: commenting this out as we don't want to be starting from the same crappy initialization when a trial fails
+        # self.reload_checkpoint()
 
         # initialize lambda coefficients and their configurations
         parse_lambda_config(params)

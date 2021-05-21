@@ -64,7 +64,7 @@ while(<STDIN>) {
     my $length_translation_this_sentence = scalar(@WORD);
     my ($closest_diff,$closest_length) = (9999,9999);
     foreach my $reference (@{$REF[$s]}) {
-#      print "$s $_ <=> $reference\n";
+    #  print "$s $_ <=> $reference\n";
   $reference = lc($reference) if $lowercase;
 	my @WORD = split(' ',$reference);
 	my $length = scalar(@WORD);
@@ -91,7 +91,7 @@ while(<STDIN>) {
 		if (!defined($REF_NGRAM{$ngram}) ||
 		    $REF_NGRAM{$ngram} < $REF_NGRAM_N{$ngram}) {
 		    $REF_NGRAM{$ngram} = $REF_NGRAM_N{$ngram};
-#	    print "$i: REF_NGRAM{$ngram} = $REF_NGRAM{$ngram}<BR>\n";
+	    # print "$i: REF_NGRAM{$ngram} = $REF_NGRAM{$ngram}<BR>\n";
 		}
 	    }
 	}
@@ -110,22 +110,22 @@ while(<STDIN>) {
 	foreach my $ngram (keys %T_NGRAM) {
 	    $ngram =~ /^(\d+) /;
 	    my $n = $1;
-            # my $corr = 0;
-#	print "$i e $ngram $T_NGRAM{$ngram}<BR>\n";
+            my $corr = 0;
+	# print "$i e $ngram $T_NGRAM{$ngram}<BR>\n";
 	    $TOTAL[$n] += $T_NGRAM{$ngram};
 	    if (defined($REF_NGRAM{$ngram})) {
 		if ($REF_NGRAM{$ngram} >= $T_NGRAM{$ngram}) {
 		    $CORRECT[$n] += $T_NGRAM{$ngram};
-                    # $corr =  $T_NGRAM{$ngram};
-#	    print "$i e correct1 $T_NGRAM{$ngram}<BR>\n";
+                    $corr =  $T_NGRAM{$ngram};
+	    # print "$i e correct1 $T_NGRAM{$ngram}<BR>\n";
 		}
 		else {
 		    $CORRECT[$n] += $REF_NGRAM{$ngram};
-                    # $corr =  $REF_NGRAM{$ngram};
-#	    print "$i e correct2 $REF_NGRAM{$ngram}<BR>\n";
+                    $corr =  $REF_NGRAM{$ngram};
+	    # print "$i e correct2 $REF_NGRAM{$ngram}<BR>\n";
 		}
 	    }
-            # $REF_NGRAM{$ngram} = 0 if !defined $REF_NGRAM{$ngram};
+            $REF_NGRAM{$ngram} = 0 if !defined $REF_NGRAM{$ngram};
             # print STDERR "$ngram: {$s, $REF_NGRAM{$ngram}, $T_NGRAM{$ngram}, $corr}\n"
 	}
     }
@@ -146,7 +146,7 @@ for(my $n=1;$n<=4;$n++) {
 }
 
 if ($length_reference==0){
-  printf "BLEU = 0, 0/0/0/0 (BP=0, ratio=0, hyp_len=0, ref_len=0)\n";
+#   printf "BLEU = 0, 0/0/0/0 (BP=0, ratio=0, hyp_len=0, ref_len=0)\n";
   exit(1);
 }
 

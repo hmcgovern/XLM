@@ -480,14 +480,14 @@ fi
 echo "BPE codes applied to $SRC in: $SRC_TRAIN_BPE"
 echo "BPE codes applied to $TGT in: $TGT_TRAIN_BPE"
 
-# # extract source and target vocabulary
-# if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" ]]; then
-#   echo "Extracting vocabulary..."
-#   $FASTBPE getvocab $SRC_TRAIN_BPE > $SRC_VOCAB
-#   $FASTBPE getvocab $TGT_TRAIN_BPE > $TGT_VOCAB
-# fi
-# echo "$SRC vocab in: $SRC_VOCAB"
-# echo "$TGT vocab in: $TGT_VOCAB"
+# extract source and target vocabulary
+if ! [[ -f "$SRC_VOCAB" && -f "$TGT_VOCAB" ]]; then
+  echo "Extracting vocabulary..."
+  $FASTBPE getvocab $SRC_TRAIN_BPE > $SRC_VOCAB
+  $FASTBPE getvocab $TGT_TRAIN_BPE > $TGT_VOCAB
+fi
+echo "$SRC vocab in: $SRC_VOCAB"
+echo "$TGT vocab in: $TGT_VOCAB"
 
 
 # reload full vocabulary
@@ -517,7 +517,7 @@ echo "$SRC binarized data in: $SRC_TRAIN_BPE.pth"
 echo "$TGT binarized data in: $TGT_TRAIN_BPE.pth"
 
 
-# if [ "$SRC" == "de" ] && [ ! "$TGT" == "hsb" ] || [ "$TGT" == "de" ]; then
+# if [ "$SRC" == "de" ] && [ ! "$TGT" == "hsb" ]; then
 #  # we just gon symlink the valid and test to the ones in de-$TGT folder and exit the file. good thinking
 
 #   #
@@ -569,74 +569,75 @@ wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/devtest.tar.gz
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/blindtest_updated.tar.gz 
 
 
-echo "Extracting parallel data..."
+echo "*** Extracting parallel data ***"
 tar -xzf dev.tgz
 tar -xzvf devtest.tar.gz -C $PARA_OUT
 tar -xzvf blindtest_updated.tar.gz -C $PARA_OUT
 
 # # tokenize, BPE, and binarize yourself bc it's not working the other way with the .sgm files
+if [ "$SRC" == "de" ] && [ "$TGT" == "hsb" ]; then
 
-# # tokenize data
-# if ! [[ -f "$PARA_SRC_VALID.tok" ]] || [[ -f "$PARA_SRC_TEST.tok" ]]; then
-#   echo "Tokenize $SRC valid/test data..."
-#   eval "cat $PARA_SRC_VALID | $SRC_PREPROCESSING > $PARA_SRC_VALID.tok"
-#   eval "cat $PARA_SRC_TEST | $SRC_PREPROCESSING > $PARA_SRC_TEST.tok"
-# fi
+  # tokenize data
+  if ! [[ -f "$PARA_SRC_VALID.tok" ]] || [[ -f "$PARA_SRC_TEST.tok" ]]; then
+    echo "Tokenize $SRC valid/test data..."
+    eval "cat $PARA_SRC_VALID | $SRC_PREPROCESSING > $PARA_SRC_VALID.tok"
+    eval "cat $PARA_SRC_TEST | $SRC_PREPROCESSING > $PARA_SRC_TEST.tok"
+  fi
 
-# if ! [[ -f "$PARA_TGT_VALID.tok" ]] || [[ -f "$PARA_TGT_TEST.tok" ]]; then
-#   echo "Tokenize $TGT valid/test data..."
-#   eval "cat $PARA_TGT_VALID | $TGT_PREPROCESSING > $PARA_TGT_VALID.tok"
-#   eval "cat $PARA_TGT_TEST | $TGT_PREPROCESSING > $PARA_TGT_TEST.tok"
-# fi
+  if ! [[ -f "$PARA_TGT_VALID.tok" ]] || [[ -f "$PARA_TGT_TEST.tok" ]]; then
+    echo "Tokenize $TGT valid/test data..."
+    eval "cat $PARA_TGT_VALID | $TGT_PREPROCESSING > $PARA_TGT_VALID.tok"
+    eval "cat $PARA_TGT_TEST | $TGT_PREPROCESSING > $PARA_TGT_TEST.tok"
+  fi
 
-# echo "$SRC valid/blindtest data tokenized in: $SRC_VALID_TOK $SRC_TEST_TOK"
-# echo "$TGT valid/blindtest data tokenized in: $TGT_VALID_TOK $TGT_TEST_TOK"
-
-
-# # apply BPE codes
-# if ! [[ -f "$PARA_SRC_VALID_BPE" ]] || [[ -f "$PARA_SRC_TEST_BPE" ]]; then
-#   echo "Applying $SRC BPE codes..."
-#   $FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID.tok $BPE_CODES
-#   $FASTBPE applybpe $PARA_SRC_TEST_BPE $PARA_SRC_TEST.tok $BPE_CODES
-# fi
-# if ! [[ -f "$PARA_TGT_VALID_BPE" ]] || [[ -f "$PARA_TGT_TEST_BPE" ]]; then
-#   echo "Applying $TGT BPE codes..."
-#   $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID.tok $BPE_CODES
-#   $FASTBPE applybpe $PARA_TGT_TEST_BPE $PARA_TGT_TEST.tok $BPE_CODES
-
-# fi
-
-# echo "BPE codes applied to $SRC in: $PARA_SRC_VALID_BPE $PARA_SRC_TEST_BPE"
-# echo "BPE codes applied to $TGT in: $PARA_TGT_VALID_BPE $PARA_TGT_TEST_BPE"
+  echo "$SRC valid/blindtest data tokenized in: $SRC_VALID_TOK $SRC_TEST_TOK"
+  echo "$TGT valid/blindtest data tokenized in: $TGT_VALID_TOK $TGT_TEST_TOK"
 
 
-# check valid and test files are here
+  # apply BPE codes
+  if ! [[ -f "$PARA_SRC_VALID_BPE" ]] || [[ -f "$PARA_SRC_TEST_BPE" ]]; then
+    echo "Applying $SRC BPE codes..."
+    # NOTE: $SRC and $TGT vocabs were not here originally
+    $FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID.tok $BPE_CODES $SRC_VOCAB
+    $FASTBPE applybpe $PARA_SRC_TEST_BPE $PARA_SRC_TEST.tok $BPE_CODES $SRC_VOCAB
+  fi
+  if ! [[ -f "$PARA_TGT_VALID_BPE" ]] || [[ -f "$PARA_TGT_TEST_BPE" ]]; then
+    echo "Applying $TGT BPE codes..."
+    $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID.tok $BPE_CODES $TGT_VOCAB
+    $FASTBPE applybpe $PARA_TGT_TEST_BPE $PARA_TGT_TEST.tok $BPE_CODES $TGT_VOCAB
 
-if ! [[ -f "$PARA_SRC_VALID.sgm" ]]; then echo "$PARA_SRC_VALID.sgm is not found!"; exit; fi
-if ! [[ -f "$PARA_TGT_VALID.sgm" ]]; then echo "$PARA_TGT_VALID.sgm is not found!"; exit; fi
-if ! [[ -f "$PARA_SRC_TEST.sgm" ]];  then echo "$PARA_SRC_TEST.sgm is not found!";  exit; fi
-if ! [[ -f "$PARA_TGT_TEST.sgm" ]];  then echo "$PARA_TGT_TEST.sgm is not found!";  exit; fi
+  fi
 
-echo "Tokenizing valid and test data..."
-eval "$INPUT_FROM_SGM < $PARA_SRC_VALID.sgm | $SRC_PREPROCESSING > $PARA_SRC_VALID"
-eval "$INPUT_FROM_SGM < $PARA_TGT_VALID.sgm | $TGT_PREPROCESSING > $PARA_TGT_VALID"
-eval "$INPUT_FROM_SGM < $PARA_SRC_TEST.sgm  | $SRC_PREPROCESSING > $PARA_SRC_TEST"
-eval "$INPUT_FROM_SGM < $PARA_TGT_TEST.sgm  | $TGT_PREPROCESSING > $PARA_TGT_TEST"
+  echo "BPE codes applied to $SRC in: $PARA_SRC_VALID_BPE $PARA_SRC_TEST_BPE"
+  echo "BPE codes applied to $TGT in: $PARA_TGT_VALID_BPE $PARA_TGT_TEST_BPE"
 
-# echo "Applying BPE to valid and test files..."
-# $FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $SRC_VOCAB
-# $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $TGT_VOCAB
-# $FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $SRC_VOCAB
-# $FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $TGT_VOCAB
+else
+  # check valid and test files are here
+  if ! [[ -f "$PARA_SRC_VALID.sgm" ]]; then echo "$PARA_SRC_VALID.sgm is not found!"; exit; fi
+  if ! [[ -f "$PARA_TGT_VALID.sgm" ]]; then echo "$PARA_TGT_VALID.sgm is not found!"; exit; fi
+  if ! [[ -f "$PARA_SRC_TEST.sgm" ]];  then echo "$PARA_SRC_TEST.sgm is not found!";  exit; fi
+  if ! [[ -f "$PARA_TGT_TEST.sgm" ]];  then echo "$PARA_TGT_TEST.sgm is not found!";  exit; fi
 
-echo "Applying BPE to valid and test files..."
-$FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $FULL_VOCAB
-$FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $FULL_VOCAB
-$FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $FULL_VOCAB
-$FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $FULL_VOCAB
+  echo "*** Tokenizing valid and test data ***"
+  eval "$INPUT_FROM_SGM < $PARA_SRC_VALID.sgm | $SRC_PREPROCESSING > $PARA_SRC_VALID"
+  eval "$INPUT_FROM_SGM < $PARA_TGT_VALID.sgm | $TGT_PREPROCESSING > $PARA_TGT_VALID"
+  eval "$INPUT_FROM_SGM < $PARA_SRC_TEST.sgm  | $SRC_PREPROCESSING > $PARA_SRC_TEST"
+  eval "$INPUT_FROM_SGM < $PARA_TGT_TEST.sgm  | $TGT_PREPROCESSING > $PARA_TGT_TEST"
 
+  echo "Applying BPE to valid and test files..."
+  $FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $SRC_VOCAB
+  $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $TGT_VOCAB
+  $FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $SRC_VOCAB
+  $FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $TGT_VOCAB
 
-echo "Binarizing data..."
+  # echo "*** Applying BPE to valid and test files ***"
+  # $FASTBPE applybpe $PARA_SRC_VALID_BPE $PARA_SRC_VALID $BPE_CODES $FULL_VOCAB
+  # $FASTBPE applybpe $PARA_TGT_VALID_BPE $PARA_TGT_VALID $BPE_CODES $FULL_VOCAB
+  # $FASTBPE applybpe $PARA_SRC_TEST_BPE  $PARA_SRC_TEST  $BPE_CODES $FULL_VOCAB
+  # $FASTBPE applybpe $PARA_TGT_TEST_BPE  $PARA_TGT_TEST  $BPE_CODES $FULL_VOCAB
+fi
+
+echo "*** Binarizing data ***"
 rm -f $PARA_SRC_VALID_BPE.pth $PARA_TGT_VALID_BPE.pth $PARA_SRC_TEST_BPE.pth $PARA_TGT_TEST_BPE.pth
 $MAIN_PATH/preprocess.py $FULL_VOCAB $PARA_SRC_VALID_BPE
 $MAIN_PATH/preprocess.py $FULL_VOCAB $PARA_TGT_VALID_BPE
