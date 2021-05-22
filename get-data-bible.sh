@@ -7,37 +7,37 @@ set -e
 
 #
 # Read arguments
-#
-POSITIONAL=()
-while [[ $# -gt 0 ]]
-do
-key="$1"
-case $key in
-  --lg)
-    lg="$2"; shift 2;;
-  --reload_codes)
-    RELOAD_CODES="$2"; shift 2;;
-  --reload_vocab)
-    RELOAD_VOCAB="$2"; shift 2;;
-  *)
-  POSITIONAL+=("$1")
-  shift
-  ;;
-esac
-done
-set -- "${POSITIONAL[@]}"
+# #
+# POSITIONAL=()
+# while [[ $# -gt 0 ]]
+# do
+# key="$1"
+# case $key in
+#   --lg)
+#     lg="$2"; shift 2;;
+#   --reload_codes)
+#     RELOAD_CODES="$2"; shift 2;;
+#   --reload_vocab)
+#     RELOAD_VOCAB="$2"; shift 2;;
+#   *)
+#   POSITIONAL+=("$1")
+#   shift
+#   ;;
+# esac
+# done
+# set -- "${POSITIONAL[@]}"
 
-
+lg=$1
 # data paths
 MAIN_PATH=$XLM_REPO_DIR
-OUTPATH=$NMT_DATA_DIR/bible/$lg
+OUTPATH=$NMT_DATA_DIR/xlm_processed/bible/$lg
 MONO_PATH=$NMT_DATA_DIR/bibles
-PROC_PATH=$NMT_DATA_DIR/bible/processed/$lg
+PROC_PATH=$NMT_DATA_DIR/xlm_processed/bible/processed/$lg
 
 # tools paths
 TOOLS_PATH=$XLM_REPO_DIR/tools
 TOKENIZE=$TOOLS_PATH/tokenize.sh
-LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
+# LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # fastBPE
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
@@ -65,12 +65,22 @@ FULL_VOCAB=$PROC_PATH/vocab
 
 cd $MONO_PATH
 # concatenate monolingual data files
-if ! [[ -f "$RAW" ]]; then
-  echo "Concatenating $lg monolingual data..."
-#   ls $lg*.txt
-  csvjoin -t -c 2 $lg*.txt > $RAW
-#   cat $(ls $lg*.txt | csvcut -t -c 2) > $RAW
+if [[ -f "$RAW" ]]; then
+  echo "Removing existing text file..."
+  rm $RAW
 fi
+echo "Concatenating $lg monolingual data..."
+
+for FILENAME in $MONO_PATH/$lg*.txt; do
+  # if the name has biblecom, scrub the first 
+  if [[ "$FILENAME" == *"biblecom"* ]]; then
+    eval "cat $FILENAME | csvcut -tc 2  >> $RAW"
+  else
+    eval "cat $FILENAME >> $RAW "
+  fi
+
+done
+
 
 exit 
 echo "*** Extracting $lg data from the tsv file ***"

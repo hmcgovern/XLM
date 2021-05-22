@@ -12,9 +12,9 @@
 set -e
 
 # data paths
-MAIN_PATH=$1
-OUTPATH=$1/data/xnli
-XNLI_PATH=$1/data/xnli/XNLI-1.0
+MAIN_PATH=$PWD
+OUTPATH=${NMT_EXP_DIR}/data/xnli_full
+XNLI_PATH=${NMT_EXP_DIR}/data/xnli_full/XNLI-1.0
 
 # tools paths
 TOOLS_PATH=$PWD/tools
