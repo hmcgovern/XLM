@@ -530,6 +530,15 @@ class EncDecEvaluator(Evaluator):
                 f.write('\n'.join(hypothesis) + '\n')
             restore_segmentation(hyp_path)
 
+            # Detokenize the reference and hypotheses
+            command = f"my-bleu-eval.sh {hyp_path} {ref_path} {lang2}"
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+            # doing some finagling of the new filenames 
+            result = p.communicate()[0].decode('utf-8')
+            result = "".join(result).split('\n')
+            hyp_path = result[0]
+            ref_path = result[1]
+
             # evaluate BLEU score
             bleu = eval_moses_bleu(ref_path, hyp_path)
             logger.info("BLEU %s %s : %f" % (hyp_path, ref_path, bleu))
@@ -567,13 +576,27 @@ def eval_moses_bleu(ref, hyp):
     assert os.path.isfile(hyp)
     assert os.path.isfile(ref) or os.path.isfile(ref + '0')
     assert os.path.isfile(BLEU_SCRIPT_PATH)
-    command = f'"{BLEU_SCRIPT_PATH}"' + ' %s < %s'
+
+    # here we want to use sacrebleu instead of multi-bleu.perl
     # command = BLEU_SCRIPT_PATH + ' %s < %s'
-    p = subprocess.Popen(command % (ref, hyp), stdout=subprocess.PIPE, shell=True)
+    # NOTE: using sacrebleu here!!!
+    command = "cat %s | python -m sacrebleu %s"
+    p = subprocess.Popen(command % (hyp, ref), stdout=subprocess.PIPE, shell=True)
+    
     result = p.communicate()[0].decode("utf-8")
-    # print(f'RESULT IS: {result}')
+
     if result.startswith('BLEU'):
-        return float(result[7:result.index(',')])
+        # need to parse it differently 
+        return float(result.split(' ')[2])
+        # return float(result[7:result.index(',')])
+
+        # command = f'"{BLEU_SCRIPT_PATH}"' + ' %s < %s'
+        # # command = BLEU_SCRIPT_PATH + ' %s < %s'
+        # p = subprocess.Popen(command % (ref, hyp), stdout=subprocess.PIPE, shell=True)
+        # result = p.communicate()[0].decode("utf-8")
+        # # print(f'RESULT IS: {result}')
+        # if result.startswith('BLEU'):
+        #     return float(result[7:result.index(',')])
     else:
         logger.warning('Impossible to parse BLEU score! "%s"' % result)
         return -1
