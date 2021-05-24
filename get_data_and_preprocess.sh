@@ -50,7 +50,7 @@ DATA_PATH=$MAIN_PATH
 # DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
 # get the first two numbers of CODES and use it to decorate the processed path
 let EXT=$CODES/1000
-PROC_PATH=$NMT_DATA_DIR/exp/$TGT-"${EXT}k" # this is where we put the hsb data and hsb-de parallel eval data
+PROC_PATH=$NMT_DATA_DIR/exp/$TGT-"${EXT}k-new" # this is where we put the hsb data and hsb-de parallel eval data
 
 # create paths
 mkdir -p $TOOLS_PATH

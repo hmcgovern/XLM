@@ -11,7 +11,7 @@ set -e
 #
 # Data preprocessing configuration
 #
-N_MONO=500000  # number of monolingual sentences for each language
+N_MONO=700000  # number of monolingual sentences for each language
 N_THREADS=16    # number of threads in data preprocessing
 
 
@@ -178,8 +178,10 @@ if [ "$SRC" == "de" -a "$TGT" == "hsb" ]; then
   PARA_SRC_VALID=$PARA_PATH/de-hsb/devel.hsb-de.de
   PARA_TGT_VALID=$PARA_PATH/de-hsb/devel.hsb-de.hsb
   # NOTE: above two are from development set, bottom two are from blindtest set. Not good practice but oh well.
-  PARA_SRC_TEST=$PARA_PATH/de-hsb/blind_test.de-hsb.de
-  PARA_TGT_TEST=$PARA_PATH/de-hsb/blind_test.hsb-de.hsb
+  # PARA_SRC_TEST=$PARA_PATH/de-hsb/blind_test.de-hsb.de
+  # PARA_TGT_TEST=$PARA_PATH/de-hsb/blind_test.hsb-de.hsb
+  PARA_SRC_TEST=$PARA_PATH/de-hsb/devel_test.hsb-de.de
+  PARA_TGT_TEST=$PARA_PATH/de-hsb/devel_test.hsb-de.hsb
 fi 
 # install tools
 ./install-tools.sh
@@ -225,16 +227,16 @@ if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
   echo "Downloading German monolingual data ..."
   mkdir -p $MONO_PATH/de
   cd $MONO_PATH/de
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.de.shuffled.v2.gz
-  # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
+  wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
+  wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
 fi
 
@@ -303,6 +305,7 @@ if [ "$SRC" == "hsb" -o "$TGT" == "hsb" ]; then
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_monolingual.hsb.gz -O news.sorbian_institute_monolingual.hsb.gz
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/witaj_monolingual.hsb.gz -O news.witaj_monolingual.hsb.gz
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/web_monolingual.hsb.gz -O news.web_monolingual.hsb.gz
+  wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/train.hsb-de.hsb.gz -O news.train.hsb.gz
 fi
 
 

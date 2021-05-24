@@ -790,7 +790,8 @@ class TransformerModel(nn.Module):
 
         # scores for each sentence in the beam
         beam_scores = src_enc.new(bs, beam_size).fill_(0)
-        beam_scores[:, 1:] = -1e9
+        # beam_scores[:, 1:] = -1e9
+        beam_scores[:, 1:] = -1e4
         beam_scores = beam_scores.view(-1)
 
         # current position

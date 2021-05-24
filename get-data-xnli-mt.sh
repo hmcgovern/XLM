@@ -44,7 +44,7 @@ mkdir -p $PROC_PATH
 # fi
 # we've got a .tsv we need to separate into indivual languages, split--> $split_raw, tokenize --> #split_raw.tok, and binarize --> $split.$lg 
 let BPE=bpe/1000
-DEV_OUT=$NMT_DATA_DIR/exp/hsb-"${BPE}k"
+DEV_OUT=$NMT_DATA_DIR/exp/hsb-"${BPE}k-new"
 mkdir -p $DEV_OUT
 
 
@@ -176,7 +176,7 @@ fi
 # tokenizing dev & test
 cd $MAIN_PATH
 
-cp codes_xnli_15 $NMT_DATA_DIR/exp/hsb-8k/codes.$Lg
+cp codes_xnli_15 $NMT_DATA_DIR/exp/hsb-8k-new/codes.de
 
 # echo "*** Tokenizing $lg valid/test data ***" 
 # if ! [[ -f "$SRC_VALID_TOK" ]]; then
