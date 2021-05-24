@@ -46,11 +46,13 @@ if [ "$SRC" == "$TGT" ]; then echo "source and target cannot be identical"; exit
 MAIN_PATH=$XLM_REPO_DIR
 TOOLS_PATH=$XLM_REPO_DIR/tools
 # we really want this to be the nmt_data DANG have to redo the way I do this
-DATA_PATH=$MAIN_PATH
+
 # DATA_PATH=$NMT_DATA_DIR/xnli/processed # german train data will be XNLI
 # get the first two numbers of CODES and use it to decorate the processed path
 let EXT=$CODES/1000
-PROC_PATH=$NMT_DATA_DIR/exp/$TGT-"${EXT}k" # this is where we put the hsb data and hsb-de parallel eval data
+DATA_PATH=$NMT_DATA_DIR/en-de-mlm/processed
+# PROC_PATH=$NMT_DATA_DIR/processed/en-de-mlm
+PROC_PATH=$NMT_DATA_DIR/exp/$TGT-"${EXT}k-ende" # this is where we put the hsb data and hsb-de parallel eval data
 
 # create paths
 mkdir -p $TOOLS_PATH
@@ -68,44 +70,46 @@ INPUT_FROM_SGM=$MOSES/scripts/ems/support/input-from-sgm.perl
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
 FASTBPE=$TOOLS_PATH/fastBPE/fast
 
-LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
+# LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # Sennrich's WMT16 scripts for Romanian preprocessing
 WMT16_SCRIPTS=$TOOLS_PATH/wmt16-scripts
 NORMALIZE_ROMANIAN=$WMT16_SCRIPTS/preprocess/normalise-romanian.py
 REMOVE_DIACRITICS=$WMT16_SCRIPTS/preprocess/remove-diacritics.py
 
-# SRC_TRAIN=$DATA_PATH/train_raw.$SRC
-# SRC_TRAIN_TOK=$SRC_TRAIN.tok
-# SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
+SRC_TRAIN=$DATA_PATH/train_raw.$SRC
+SRC_TRAIN_TOK=$SRC_TRAIN.tok
+SRC_TRAIN_BPE=$PROC_PATH/train.$SRC
 
 # # NOTE: might need to change the PROC_PATH to DATA_PATH here
-# SRC_VALID=$PROC_PATH/valid_raw.$SRC
-# SRC_VALID_TOK=$SRC_VALID.tok
-# SRC_VALID_BPE=$PROC_PATH/valid.$SRC
+SRC_VALID=$DATA_PATH/valid_raw.$SRC
+SRC_VALID_TOK=$SRC_VALID.tok
+SRC_VALID_BPE=$PROC_PATH/valid.$SRC
 
-# SRC_TEST=$PROC_PATH/test_raw.$SRC
-# SRC_TEST_TOK=$SRC_TEST.tok
-# SRC_TEST_BPE=$PROC_PATH/test.$SRC
+SRC_TEST=$DATA_PATH/test_raw.$SRC
+SRC_TEST_TOK=$SRC_TEST.tok
+SRC_TEST_BPE=$PROC_PATH/test.$SRC
 
 # train/ valid/ test target file data
-TGT_TRAIN=$PROC_PATH/train_raw.$TGT
+TGT_TRAIN=$DATA_PATH/train_raw.$TGT
 TGT_TRAIN_TOK=$TGT_TRAIN.tok
 TGT_TRAIN_BPE=$PROC_PATH/train.$TGT
 
-TGT_VALID=$PROC_PATH/valid_raw.$TGT
+TGT_VALID=$DATA_PATH/valid_raw.$TGT
 TGT_VALID_TOK=$TGT_VALID.tok
 TGT_VALID_BPE=$PROC_PATH/valid.$TGT
 
-TGT_TEST=$PROC_PATH/test_raw.$TGT
+TGT_TEST=$DATA_PATH/test_raw.$TGT
 TGT_TEST_TOK=$TGT_TEST.tok
 TGT_TEST_BPE=$PROC_PATH/test.$TGT
 
 # BPE / vocab files
 BPE_TGT_CODES=$PROC_PATH/codes.$TGT
 # BPE_CODES_HMR=$PROC_PATH/codes
-BPE_CODES_HMR=$DATA_PATH/codes_xnli_15 # not lang specific bc it's 15 way
-SRC_VOCAB=$DATA_PATH/vocab_xnli_15 # not lang specific bc it's 15 way
+BPE_CODES_HMR=$MAIN_PATH/codes_ende
+SRC_VOCAB=$MAIN_PATH/vocab_ende
+# BPE_CODES_HMR=$DATA_PATH/codes_xnli_15 # not lang specific bc it's 15 way
+# SRC_VOCAB=$DATA_PATH/vocab_xnli_15 # not lang specific bc it's 15 way
 # SRC_VOCAB=$DATA_PATH/vocab.$SRC
 # SRC_VOCAB=$DATA_PATH/vocab
 # SRC_VOCAB=$PROC_PATH/vocab.$SRC
@@ -136,7 +140,7 @@ fi
 # tokenize data
 if ! [[ -f "$TGT_TRAIN_TOK" ]]; then
   echo "*** Tokenize $TGT monolingual data... ***"
-  eval "cat $TGT_TRAIN | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_TRAIN_TOK"
+  eval "cat $TGT_TRAIN | $TGT_PREPROCESSING > $TGT_TRAIN_TOK"
 fi
 
 echo "*** $TGT monolingual data tokenized in: $TGT_TRAIN_TOK ***"
@@ -204,20 +208,20 @@ echo "*** $TGT binarized data in: $TGT_TRAIN_BPE.pth ***"
 
 echo "*** Tokenizing valid and test data... ***"
 
-# tokenize data
-# if ! [[ -f "$SRC_VALID_TOK" ]]; then
-#   eval "cat $SRC_VALID | $SRC_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $SRC_VALID_TOK"
-# fi
-# if ! [[ -f "$SRC_TEST_TOK" ]]; then
-#   eval "cat $SRC_TEST | $SRC_PREPROCESSING| python $LOWER_REMOVE_ACCENT > $SRC_TEST_TOK"
-# fi
+tokenize data
+if ! [[ -f "$SRC_VALID_TOK" ]]; then
+  eval "cat $SRC_VALID | $SRC_PREPROCESSING > $SRC_VALID_TOK"
+fi
+if ! [[ -f "$SRC_TEST_TOK" ]]; then
+  eval "cat $SRC_TEST | $SRC_PREPROCESSING > $SRC_TEST_TOK"
+fi
 
 if ! [[ -f "$TGT_VALID_TOK" ]]; then
-  eval "cat $TGT_VALID | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_VALID_TOK"
+  eval "cat $TGT_VALID | $TGT_PREPROCESSING  > $TGT_VALID_TOK"
 fi
 
 if ! [[ -f "$TGT_TEST_TOK" ]]; then
-  eval "cat $TGT_TEST | $TGT_PREPROCESSING | python $LOWER_REMOVE_ACCENT > $TGT_TEST_TOK"
+  eval "cat $TGT_TEST | $TGT_PREPROCESSING  > $TGT_TEST_TOK"
 fi
 
 echo "*** Applying BPE to valid and test files... ***"

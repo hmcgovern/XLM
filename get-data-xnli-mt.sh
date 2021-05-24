@@ -11,22 +11,24 @@
 
 set -e
 
-lg=$1
-bpe=$2
+# lg=$1
+# bpe=$2
 
 # data paths
 MAIN_PATH=$XLM_REPO_DIR
-OUTPATH=$NMT_DATA_DIR/xnli
-XNLI_PATH=$NMT_DATA_DIR/xnli/XNLI-15way
-CODES=$MAIN_PATH/codes_xnli_15
-VOCAB=$MAIN_PATH/vocab_xnli_15
-
-PROC_PATH=$NMT_DATA_DIR/xnli/processed
+CODES=$MAIN_PATH/codes_ende
+VOCAB=$MAIN_PATH/vocab_ende
+# OUTPATH=$NMT_DATA_DIR/xnli
+# XNLI_PATH=$NMT_DATA_DIR/xnli/XNLI-15way
+# CODES=$MAIN_PATH/codes_xnli_15
+# VOCAB=$MAIN_PATH/vocab_xnli_15
+OUTPATH=$NMT_DATA_DIR/en-de-mlm
+PROC_PATH=$OUTPATH/processed
 
 # tools paths
 TOOLS_PATH=$XLM_REPO_DIR/tools
 TOKENIZE=$TOOLS_PATH/tokenize.sh
-LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
+# LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # install tools
 ./install-tools.sh
@@ -43,15 +45,21 @@ mkdir -p $PROC_PATH
 #   unzip $OUTPATH/XNLI-15way.zip -d $OUTPATH
 # fi
 # we've got a .tsv we need to separate into indivual languages, split--> $split_raw, tokenize --> #split_raw.tok, and binarize --> $split.$lg 
-let BPE=bpe/1000
-DEV_OUT=$NMT_DATA_DIR/exp/hsb-"${BPE}k"
+# let BPE=bpe/1000
+DEV_OUT=$OUTPATH
+# DEV_OUT=$NMT_DATA_DIR/exp/hsb-"${BPE}k"
 mkdir -p $DEV_OUT
 
 
 # training things
-# SRC_TRAIN=$PROC_PATH/train_raw.$lg
-# SRC_TRAIN_TOK=$SRC_TRAIN.tok
-# SRC_TRAIN_BPE=$DEV_OUT/train.$lg
+SRC_TRAIN=$PROC_PATH/train_raw.de
+SRC_VALID=$PROC_PATH/valid_raw.de
+SRC_TEST=$PROC_PATH/test_raw.de
+
+TGT_TRAIN=$PROC_PATH/train_raw.hsb
+TGT_VALID=$PROC_PATH/valid_raw.hsb
+TGT_TEST=$PROC_PATH/test_raw.hsb
+
 
 # echo "*** Extracting $lg data from the tsv file ***"
 # # since I don't know the column number, I can't use awk easily. Installing a specialized package called csvkit to help
@@ -86,19 +94,18 @@ FASTBPE=$TOOLS_PATH/fastBPE/fast
 
 # copying codes and vocab to be in the right place for a later script
 cp $CODES $PROC_PATH/codes
-cp $VOCAB $PROC_PATH/vocab.$lg
+cp $VOCAB $PROC_PATH/vocab
 
-############# hsb train data NOT PROCESSED, JUST DOWNLOADED ###########
+############# DOWNLOADING HSB DATA ###########
 
 cd $DEV_OUT
 
 # training things
-TGT_TRAIN=$DEV_OUT/train_raw.hsb
-
 
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_monolingual.hsb.gz
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/witaj_monolingual.hsb.gz 
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/web_monolingual.hsb.gz
+wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/train.hsb-de.hsb.gz 
 
 
 for FILENAME in $DEV_OUT/*hsb.gz; do
@@ -114,32 +121,47 @@ done
 # concatenate all hsb train data
 if ! [[ -f "$TGT_TRAIN" ]]; then
     echo "*** Getting hsb train... ***"
-    cat $(ls $DEV_OUT/*monolingual.hsb | grep -v gz) > $TGT_TRAIN
+    cat $(ls $DEV_OUT/*.hsb | grep -v gz) > $TGT_TRAIN
 fi
+
+############# Downloading German News Translation data ###########
+
+
+wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
+wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
+
+for FILENAME in $DEV_OUT/*de.shuffled.gz; do
+  OUTPUT=${FILENAME%.gz}
+  if [ ! -f "$OUTPUT" ] ; then
+    echo "*** Decompressing $FILENAME... ***"
+    gunzip -c $FILENAME > $OUTPUT
+  else
+    echo "*** $OUTPUT already decompressed. ***"
+  fi
+done
+
+# concatenate all de train data
+if ! [[ -f "$SRC_TRAIN" ]]; then
+    echo "*** Getting de train... ***"
+    cat $(ls $DEV_OUT/*.de.shuffled | grep -v gz) > $SRC_TRAIN
+fi
+
 
 ############# de-hsb dev/test data ###########
 
 wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/devtest.tar.gz
+wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/blindtest_updated.tar.gz 
 
-# # SRC dev things
-# SRC_VALID=$DEV_OUT/valid_raw.$lg
-# SRC_VALID_TOK=$SRC_VALID.tok
-# SRC_VALID_BPE=$DEV_OUT/valid.$lg
 
-# # SRC test things
-# SRC_TEST=$DEV_OUT/test_raw.$lg
-# SRC_TEST_TOK=$SRC_TEST.tok
-# SRC_TEST_BPE=$DEV_OUT/test.$lg
+# # TGT dev things
+# TGT_VALID=$DEV_OUT/valid_raw.hsb
+# TGT_VALID_TOK=$TGT_VALID.tok
+# TGT_VALID_BPE=$DEV_OUT/valid.hsb
 
-# TGT dev things
-TGT_VALID=$DEV_OUT/valid_raw.hsb
-TGT_VALID_TOK=$TGT_VALID.tok
-TGT_VALID_BPE=$DEV_OUT/valid.hsb
-
-# TGT test things
-TGT_TEST=$DEV_OUT/test_raw.hsb
-TGT_TEST_TOK=$TGT_TEST.tok
-TGT_TEST_BPE=$DEV_OUT/test.hsb
+# # TGT test things
+# TGT_TEST=$DEV_OUT/test_raw.hsb
+# TGT_TEST_TOK=$TGT_TEST.tok
+# TGT_TEST_BPE=$DEV_OUT/test.hsb
 
 for FILENAME in $DEV_OUT/*tar.gz; do
   OUTPUT=${FILENAME%.gz}
@@ -152,10 +174,25 @@ for FILENAME in $DEV_OUT/*tar.gz; do
 done
 
 
-# if ! [[ -f "$SRC_VALID" ]]; then
-#     echo "*** Renaming german dev files... ***"
-#     cat $(ls $DEV_OUT/*test.hsb-$lg.$lg | grep -v gz) > $SRC_VALID
-# fi
+echo "*** German dev files... ***"
+
+if ! [[ -f "$SRC_VALID" ]]; then
+    
+    cat $(ls $DEV_OUT/devel.hsb-de.de | grep -v gz) > $SRC_VALID
+fi
+
+if ! [[ -f "$SRC_TEST" ]]; then
+    cat $(ls $DEV_OUT/blind_test.de-hsb.de | grep -v gz) > $SRC_TEST
+fi
+
+echo "*** Sorbian dev files... ***"
+if ! [[ -f "$TGT_VALID" ]]; then
+    cat $(ls $DEV_OUT/devel.hsb-de.hsb | grep -v gz) > $TGT_VALID
+fi
+
+if ! [[ -f "$TGT_TEST" ]]; then
+    cat $(ls $DEV_OUT/blind_test.hsb-de.hsb | grep -v gz) > $TGT_TEST
+fi
 
 # if ! [[ -f "$SRC_TEST" ]]; then
 #     echo "*** Renaming german dev files...***"
@@ -163,20 +200,20 @@ done
 # fi
 
 
-if ! [[ -f "$TGT_VALID" ]]; then
-    echo "*** Renaming sorbian dev files... ***"
-    cat $(ls $DEV_OUT/devel.hsb-$lg.hsb | grep -v gz) > $TGT_VALID
-fi
+# if ! [[ -f "$TGT_VALID" ]]; then
+#     echo "*** Renaming sorbian dev files... ***"
+#     cat $(ls $DEV_OUT/devel.hsb-de.hsb | grep -v gz) > $TGT_VALID
+# fi
 
-if ! [[ -f "$TGT_TEST" ]]; then
-    echo "*** Renaming sorbian dev files... ***"
-    cat $(ls $DEV_OUT/*test.hsb-$lg.hsb | grep -v gz) > $TGT_TEST
-fi
+# if ! [[ -f "$TGT_TEST" ]]; then
+#     echo "*** Renaming sorbian dev files... ***"
+#     cat $(ls $DEV_OUT/*test.hsb-de.hsb | grep -v gz) > $TGT_TEST
+# fi
 
 # tokenizing dev & test
-cd $MAIN_PATH
+# cd $MAIN_PATH
 
-cp codes_xnli_15 $NMT_DATA_DIR/exp/hsb-8k/codes.$Lg
+# cp codes_xnli_15 $NMT_DATA_DIR/exp/hsb-8k/codes.$Lg
 
 # echo "*** Tokenizing $lg valid/test data ***" 
 # if ! [[ -f "$SRC_VALID_TOK" ]]; then

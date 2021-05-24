@@ -21,6 +21,7 @@ python ./train.py \
 --lambda_ae '0:1,100000:0.1,300000:0' \
 --bt_steps "de-hsb-de,hsb-de-hsb" \
 --log_int 100 \
+--max_len 200 \
 --epsilon 0.1 \
 --word_shuffle 3 \
 --word_dropout 0.1 \
@@ -45,4 +46,3 @@ python ./train.py \
 --fp16 true \
 --accumulate_gradients 4 \
 
-# --max_len 200 \

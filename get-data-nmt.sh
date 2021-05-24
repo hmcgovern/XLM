@@ -178,8 +178,11 @@ if [ "$SRC" == "de" -a "$TGT" == "hsb" ]; then
   PARA_SRC_VALID=$PARA_PATH/de-hsb/devel.hsb-de.de
   PARA_TGT_VALID=$PARA_PATH/de-hsb/devel.hsb-de.hsb
   # NOTE: above two are from development set, bottom two are from blindtest set. Not good practice but oh well.
-  PARA_SRC_TEST=$PARA_PATH/de-hsb/blind_test.de-hsb.de
-  PARA_TGT_TEST=$PARA_PATH/de-hsb/blind_test.hsb-de.hsb
+  # NOTE: this was a lie from the pit of HELL. They are not parallel to each other so of NO use as a blind test set
+  # PARA_SRC_TEST=$PARA_PATH/de-hsb/blind_test.de-hsb.de
+  # PARA_TGT_TEST=$PARA_PATH/de-hsb/blind_test.hsb-de.hsb
+  PARA_SRC_TEST=$PARA_PATH/de-hsb/devel_test.hsb-de.de
+  PARA_TGT_TEST=$PARA_PATH/de-hsb/devel_test.hsb-de.hsb
 fi 
 # install tools
 ./install-tools.sh
