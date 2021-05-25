@@ -123,17 +123,21 @@ finetune:
 	./finetune_LM.sh
 
 de-en-hsb: 
-	@bash get-data-para.sh --pair en-de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
-	@bash get-data-nmt.sh --src en --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
+	@bash get-data-para.sh --pair en-de --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
+	# @bash get-data-nmt.sh --src en --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475 
 de-bg-hsb:
-	@bash get-data-para.sh --pair de-bg --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
-	@bash get-data-nmt.sh --src bg --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
+	@bash get-data-para.sh --pair de-bg --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
+	# @bash get-data-nmt.sh --src bg --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
 de-ru-hsb:
-	@bash get-data-para.sh --pair de-ru --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
-	@bash get-data-nmt.sh --src de --tgt ru --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 
+	@bash get-data-para.sh --pair de-ru --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
+	# @bash get-data-nmt.sh --src de --tgt ru --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475 
 de-fr-hsb:
-	@bash get-data-para.sh --pair de-fr --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
-	@bash get-data-nmt.sh --src de --tgt fr --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
+	@bash get-data-para.sh --pair de-fr --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
+	# @bash get-data-nmt.sh --src de --tgt fr --reload_codes $(NMT_DATA_DIR)/exp/hsb-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-8k/vocab.hsb-de-ext-by-2475
+
+para-bible:
+	@bash ./get-data-bible.sh --lgs "eng-deu-bul"
+
 de-ar-hsb:
 	@bash get-data-para.sh --pair de-ar --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381
 	@bash get-data-nmt.sh --src ar --tgt de --reload_codes $(NMT_DATA_DIR)/exp/hsb-de-8k/codes.full --reload_vocab $(NMT_DATA_DIR)/exp/hsb-de-8k/vocab.hsb-de-ext-by-2381 

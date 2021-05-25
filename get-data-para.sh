@@ -105,14 +105,14 @@ if [ $pair == "bg-en" ]; then
   unzip -u $PARA_PATH/download.php?f=Europarl%2Fbg-en.txt.zip -d $PARA_PATH
 fi
 
-# de-en
-if [ $pair == "de-en" ]; then
-  # OpenSubtitles 2018
-  # wget -c http://opus.nlpl.eu/download.php?f=OpenSubtitles2018%2Fde-en.txt.zip -P $PARA_PATH
-  # EU Bookshop
-  wget -c http://opus.nlpl.eu/download.php?f=EUbookshop%2Fde-en.txt.zip -P $PARA_PATH
-  unzip -u $PARA_PATH/download.php?f=EUbookshop%2Fde-en.txt.zip -d $PARA_PATH
-fi
+# # de-en
+# if [ $pair == "de-en" ]; then
+#   # OpenSubtitles 2018
+#   # wget -c http://opus.nlpl.eu/download.php?f=OpenSubtitles2018%2Fde-en.txt.zip -P $PARA_PATH
+#   # EU Bookshop
+#   wget -c http://opus.nlpl.eu/download.php?f=EUbookshop%2Fde-en.txt.zip -P $PARA_PATH
+#   unzip -u $PARA_PATH/download.php?f=EUbookshop%2Fde-en.txt.zip -d $PARA_PATH
+# fi
 
 # el-en
 if [ $pair == "el-en" ]; then
@@ -229,6 +229,31 @@ if [ $pair == "en-zh" ]; then
   unzip -u $PARA_PATH/download.php?f=MultiUN%2Fen-zh.txt.zip -d $PARA_PATH
 fi
 
+############# MY PAIRS ###############
+if [ $pair == "bg-de" ]; then
+  echo "Downloading Europarl v8 German-Bulgarian parallel data"
+  wget -c https://opus.nlpl.eu/download.php?f=Europarl/v8/moses/bg-de.txt.zip -O $PARA_PATH/raw_bg-de.zip
+  # if [ ! -d $PARA_PATH/raw_bg-de ]; then
+  unzip $PARA_PATH/raw_bg-de.zip -d $PARA_PATH
+  # fi
+fi
+
+if [ $pair == "de-en" ]; then
+  echo "Downloading Europarl v8 English-German parallel data"
+  wget -c https://opus.nlpl.eu/download.php?f=Europarl/v8/moses/de-en.txt.zip -O $PARA_PATH/raw_de-en.zip
+  # if [ ! -d $PARA_PATH/raw_de-en ]; then
+  unzip $PARA_PATH/raw_de-en.zip -d $PARA_PATH
+  # fi
+fi
+
+if [ $pair == "de-fr" ]; then
+  echo "Downloading Europarl v8 German-French parallel data"
+  wget -c https://opus.nlpl.eu/download.php?f=Europarl/v8/moses/de-fr.txt.zip -O $PARA_PATH/raw_de-fr.zip
+  # if [ ! -d $PARA_PATH/de-fr.txt ]; then
+  unzip $PARA_PATH/raw_de-fr.zip -d $PARA_PATH
+  # fi
+fi
+# exit
 
 if [ $pair == "de-hsb" ];then
   echo "Download WMT20 parallel data for German-Upper Sorbian"
@@ -243,6 +268,7 @@ if [ $pair == "de-hsb" ];then
   if [ ! -d $PARA_PATH/train.hsb-de.de ]; then
     gunzip -c $PARA_PATH/train.hsb-de.de.gz > $PARA_PATH/train.hsb-de.de
   fi
+
 
   # NO NEED TO SPLIT!
 
@@ -284,24 +310,24 @@ exit
 fi
 
 
-######## adding my own, non english centric pairs #########
-# the process is the same for all the xnli data
-if [ $SRC == "de" ]|| [ $TGT == "de" ];then
-  echo "Download parallel data for German-${TGT}"
-  # XNLI-15 way
-  PARENT_PATH=$(dirname $PARA_PATH)
-  wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $PARENT_PATH
-  if [ ! -d $PARENT_PATH/XNLI-15way ]; then
-    unzip $PARENT_PATH/XNLI-15way.zip -d $PARENT_PATH
-  fi
-  # for german and english, just cut the csv file 
-  for lg in $(echo $pair | sed -e 's/\-/ /g'); do
-    csvcut -t -c $lg $PARENT_PATH/XNLI-15way/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $PARA_PATH/XNLI-15way.$pair.$lg
-  done
-  # reassigning these values bc the whole dataset is only 10k
-  NTRAIN_SUB=1000
-  NVAL_SUB=500
-fi
+# ######## adding my own, non english centric pairs #########
+# # the process is the same for all the xnli data
+# if [ $SRC == "de" ]|| [ $TGT == "de" ];then
+#   echo "Download parallel data for German-${TGT}"
+#   # XNLI-15 way
+#   PARENT_PATH=$(dirname $PARA_PATH)
+#   wget -c https://dl.fbaipublicfiles.com/XNLI/XNLI-15way.zip -P $PARENT_PATH
+#   if [ ! -d $PARENT_PATH/XNLI-15way ]; then
+#     unzip $PARENT_PATH/XNLI-15way.zip -d $PARENT_PATH
+#   fi
+#   # for german and english, just cut the csv file 
+#   for lg in $(echo $pair | sed -e 's/\-/ /g'); do
+#     csvcut -t -c $lg $PARENT_PATH/XNLI-15way/xnli.15way.orig.tsv | csvcut -K 1 | csvformat -T  > $PARA_PATH/XNLI-15way.$pair.$lg
+#   done
+#   # reassigning these values bc the whole dataset is only 10k
+#   NTRAIN_SUB=1000
+#   NVAL_SUB=500
+# fi
 
 
 

@@ -13,7 +13,8 @@ set -e
 N_THREADS=8
 
 lg=$1
-TOOLS_PATH=$PWD/tools
+# TOOLS_PATH=$PWD/tools
+TOOLS_PATH=${XLM_REPO_DIR}/tools
 
 # moses
 MOSES=$TOOLS_PATH/mosesdecoder

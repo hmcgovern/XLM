@@ -11,6 +11,7 @@ parser.add_argument("--S", type=float, default=0.5, help="exponent subsampling f
 parser.add_argument("--lgs", type=str, default="", help="list of languages hyphen-separated")
 parser.add_argument("--scale", type=float, default=1e4, help="controls the minimum number of sentences of each language")
 parser.add_argument('--debug', dest='debug', action='store_true')
+parser.add_argument('--prefix', default="${NMT_DATA_DIR}/mono", help='path prefix to the train.lg files')
 parser.set_defaults(debug=False)
 
 params = parser.parse_args()
@@ -18,7 +19,7 @@ params = parser.parse_args()
 # get the number of words in the corpus of each language 
 # lg2count.txt -> tsv file: first column is language (e.g. "en", or "fr") and second column is number of lines
 lg2count = {}
-with open('lg2count.txt') as f:
+with open('lg2count.tsv') as f:
     for line in f:
         line = line.rstrip().split('\t')
         lg, count = line[0], int(line[1])
@@ -37,11 +38,15 @@ if params.debug:
 min_c = min([lg2count[lg] for lg in lg2count])
 min_p = min([lg2count[lg]**S for lg in lg2count]) / tot_S
 
+
+
 # scale:
 for lg in params.lgs.split('-'):
     p = lg2count[lg]**S / tot_S
-    # print('%s : %.0f' % (lg, params.scale * min_c * (p / min_p)))
-    COMMAND = "shuf -r -n %.0f %s.train >> bpe.train.factor=%s" % (scale * min_c * (p / min_p), lg, params.S)
+    print('%s : %.0f' % (lg, params.scale * min_c * (p / min_p)))
+    # COMMAND = "shuf -r -n %.0f %s.train >> bpe.train.factor=%s" % (params.scale * min_c * (p / min_p), lg, params.S)
+    # just add the appropriate path before 
+    COMMAND = "shuf -r -n %.0f %s/%s/%s.train >> bpe.train.factor=%s" % (params.scale * min_c * (p / min_p), params.prefix, lg, lg, params.S)
     if params.debug:
         print(COMMAND)
     else:

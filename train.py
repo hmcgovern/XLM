@@ -275,6 +275,7 @@ def main(params):
 
     # going to put everything except the training, val, and test in the trainer class, 
     data = load_data(params)
+    # exit()
 
     # build model
     if params.encoder_only:

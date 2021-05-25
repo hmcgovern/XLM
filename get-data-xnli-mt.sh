@@ -16,19 +16,19 @@ set -e
 
 # data paths
 MAIN_PATH=$XLM_REPO_DIR
-CODES=$MAIN_PATH/codes_ende
-VOCAB=$MAIN_PATH/vocab_ende
-# OUTPATH=$NMT_DATA_DIR/xnli
-# XNLI_PATH=$NMT_DATA_DIR/xnli/XNLI-15way
-# CODES=$MAIN_PATH/codes_xnli_15
-# VOCAB=$MAIN_PATH/vocab_xnli_15
-OUTPATH=$NMT_DATA_DIR/en-de-mlm
+# CODES=$MAIN_PATH/codes_ende
+# VOCAB=$MAIN_PATH/vocab_ende
+OUTPATH=$NMT_DATA_DIR/xnli
+XNLI_PATH=$NMT_DATA_DIR/xnli/XNLI-15way
+CODES=$MAIN_PATH/codes_xnli_15
+VOCAB=$MAIN_PATH/vocab_xnli_15
+# OUTPATH=$NMT_DATA_DIR/en-de-mlm
 PROC_PATH=$OUTPATH/processed
 
 # tools paths
 TOOLS_PATH=$XLM_REPO_DIR/tools
 TOKENIZE=$TOOLS_PATH/tokenize.sh
-# LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
+LOWER_REMOVE_ACCENT=$TOOLS_PATH/lowercase_and_remove_accent.py
 
 # install tools
 ./install-tools.sh

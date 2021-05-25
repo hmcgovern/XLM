@@ -11,7 +11,7 @@ set -e
 #
 # Data preprocessing configuration
 #
-N_MONO=500000  # number of monolingual sentences for each language
+N_MONO=700000  # number of monolingual sentences for each language
 N_THREADS=16    # number of threads in data preprocessing
 
 
@@ -228,16 +228,16 @@ if [ "$SRC" == "de" -o "$TGT" == "de" ]; then
   echo "Downloading German monolingual data ..."
   mkdir -p $MONO_PATH/de
   cd $MONO_PATH/de
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
-  wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2007.de.shuffled.gz
+  # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2008.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2009.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2010.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2011.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2012.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt14/training-monolingual-news-crawl/news.2013.de.shuffled.gz
   # wget -c http://www.statmt.org/wmt15/training-monolingual-news-crawl-v2/news.2014.de.shuffled.v2.gz
-  # wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
-  # wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
+  wget -c http://data.statmt.org/wmt16/translation-task/news.2015.de.shuffled.gz
+  wget -c http://data.statmt.org/wmt17/translation-task/news.2016.de.shuffled.gz
   # wget -c http://data.statmt.org/wmt18/translation-task/news.2017.de.shuffled.deduped.gz
 fi
 
@@ -306,6 +306,7 @@ if [ "$SRC" == "hsb" -o "$TGT" == "hsb" ]; then
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/sorbian_institute_monolingual.hsb.gz -O news.sorbian_institute_monolingual.hsb.gz
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/witaj_monolingual.hsb.gz -O news.witaj_monolingual.hsb.gz
   wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/web_monolingual.hsb.gz -O news.web_monolingual.hsb.gz
+  wget -c http://www.statmt.org/wmt20/unsup_and_very_low_res/train.hsb-de.hsb.gz -O news.train.hsb.gz
 fi
 
 
@@ -322,13 +323,13 @@ if [ "$SRC" == "bg" -o "$TGT" == "bg" ]; then
   mkdir -p $MONO_PATH/bg
   cd $MONO_PATH/bg
 
-  wget -c http://data.statmt.org/news-crawl/bg/news.2013.bg.shuffled.deduped.gz
-  wget -c http://data.statmt.org/news-crawl/bg/news.2014.bg.shuffled.deduped.gz	
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2013.bg.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/bg/news.2014.bg.shuffled.deduped.gz	
   # wget -c http://data.statmt.org/news-crawl/bg/news.2015.bg.shuffled.deduped.gz	
   # wget -c http://data.statmt.org/news-crawl/bg/news.2016.bg.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/bg/news.2017.bg.shuffled.deduped.gz
-  # wget -c http://data.statmt.org/news-crawl/bg/news.2018.bg.shuffled.deduped.gz
-  # wget -c http://data.statmt.org/news-crawl/bg/news.2019.bg.shuffled.deduped.gz
+  wget -c http://data.statmt.org/news-crawl/bg/news.2018.bg.shuffled.deduped.gz
+  wget -c http://data.statmt.org/news-crawl/bg/news.2019.bg.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/bg/news.2020.bg.shuffled.deduped.gz
 
 fi
@@ -339,8 +340,8 @@ if [ "$SRC" == "ru" -o "$TGT" == "ru" ]; then
   mkdir -p $MONO_PATH/ru
   cd $MONO_PATH/ru
 
-  wget -c http://data.statmt.org/news-crawl/ru/news.2008.ru.shuffled.deduped.gz
-  wget -c http://data.statmt.org/news-crawl/ru/news.2009.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2008.ru.shuffled.deduped.gz
+  # wget -c http://data.statmt.org/news-crawl/ru/news.2009.ru.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/ru/news.2010.ru.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/ru/news.2011.ru.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/ru/news.2012.ru.shuffled.deduped.gz
@@ -349,8 +350,8 @@ if [ "$SRC" == "ru" -o "$TGT" == "ru" ]; then
   # wget -c http://data.statmt.org/news-crawl/ru/news.2015.ru.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/ru/news.2016.ru.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/ru/news.2017.ru.shuffled.deduped.gz
-  # wget -c http://data.statmt.org/news-crawl/ru/news.2018.ru.shuffled.deduped.gz
-  # wget -c http://data.statmt.org/news-crawl/ru/news.2019.ru.shuffled.deduped.gz
+  wget -c http://data.statmt.org/news-crawl/ru/news.2018.ru.shuffled.deduped.gz
+  wget -c http://data.statmt.org/news-crawl/ru/news.2019.ru.shuffled.deduped.gz
   # wget -c http://data.statmt.org/news-crawl/ru/news.2020.ru.shuffled.deduped.gz
 
 fi

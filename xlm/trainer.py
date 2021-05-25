@@ -949,8 +949,8 @@ class EncDecTrainer(Trainer):
             langs3 = x3.clone().fill_(lang3_id)
             
             # free CUDA memory
-            # del enc1
-            # del enc2
+            del enc1
+            del enc2
 
             # logging to comet
             if self.n_total_iter % params.log_int == 0:
@@ -1304,16 +1304,17 @@ class EncDecTrainer(Trainer):
         dec3, _ = self.decoder('fwd', x=x1, lengths=len1, langs=langs1, causal=True, 
                                 src_enc=enc2, src_len=len2, encoder_only=False, 
                                 extra_adapters_flag=True)
+
         # print('BT STEP:', dec3.size())
-        if self.n_total_iter % params.log_int ==0:
-            # translate back and log
-            x3, len3 = _decoder.generate(enc2, len2, lang1_id, max_len=int(1.3 * len2.max().item() + 5))
-            bt2 = []
-            bt2.extend(convert_to_text(x3, len3, self.data['dico'], params))
+        # if self.n_total_iter % params.log_int ==0:
+        #     # translate back and log
+        #     x3, len3 = _decoder.generate(enc2, len2, lang1_id, max_len=int(1.3 * len2.max().item() + 5))
+        #     bt2 = []
+        #     bt2.extend(convert_to_text(x3, len3, self.data['dico'], params))
 
-            self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_total_iter, metadata={'category': 'bt_step'})
-            # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
-
+        #     self.exp.log_text(f'ORIGINAL {lang1}: {orig[0]}\n\nBT TO {lang2}: {bt1[0]}\n\nBT BACK TO {lang1}: {bt2[0]}', step=self.n_total_iter, metadata={'category': 'bt_step'})
+        #     # self.exp.log_text(bt2[:3], step=self.n_iter, metadata={'category': 'bt_step','name': 'bt2', 'lang': lang1_id})
+        del enc2
         # loss
         _, loss, _, _ = self.decoder('predict', tensor=dec3, pred_mask=pred_mask, y=y1, get_scores=False)
         self.stats[('BT-%s-%s-%s' % (lang1, lang2, lang3))].append(loss.item())
